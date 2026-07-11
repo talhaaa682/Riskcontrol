@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOF Migration - Consultant QA Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+body { font-family: 'Inter', sans-serif; }
+.score-bar { transition: width 0.6s ease; }
+.fade-in { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.modal-overlay { background: rgba(0,0,0,0.5); }
+</style>
+<base target="_blank">
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+
+<nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">H</div>
+    <div>
+      <h1 class="font-bold text-lg leading-tight">HOF Migration</h1>
+      <p class="text-xs text-slate-500">Consultant QA Dashboard</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 text-sm">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="text-slate-600">Live</span>
+    </div>
+    <div class="bg-slate-100 rounded-full px-4 py-1.5 text-sm font-medium" id="currentDate"></div>
+    <button onclick="saveAllData()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      Save
+    </button>
+    <button onclick="exportReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Export</button>
+  </div>
+</nav>
+
+<div class="flex">
+  <aside class="w-64 bg-white border-r border-slate-200 min-h-screen p-4 hidden lg:block">
+    <div class="space-y-1">
+      <button onclick="switchView('overview')" id="nav-overview" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 flex items-center gap-3 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Executive Overview
+      </button>
+      <button onclick="switchView('qa-checklist')" id="nav-qa-checklist" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Daily QA Checklist
+      </button>
+      <button onclick="switchView('consultants')" id="nav-consultants" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        Manage Consultants
+      </button>
+      <button onclick="switchView('certification')" id="nav-certification" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Certification Center
+      </button>
+      <button onclick="switchView('alerts')" id="nav-alerts" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        Alerts & Tasks
+        <span id="alertBadge" class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+      </button>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-slate-200">
+      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Scoring Weights</h3>
+      <div class="space-y-3">
+        <div><div class="flex justify-between text-xs mb-1"><span>Call Handling (CHS)</span><span class="font-medium">35%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full score-bar" style="width:35%"></div></div></div>
+        <div><div class="flex justify-between text-xs mb-1"><span>Process Adherence (PAS)</span><span class="font-medium">35%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full score-bar" style="width:35%"></div></div></div>
+        <div><div class="flex justify-between text-xs mb-1"><span>Closing Effectiveness (CES)</span><span class="font-medium">30%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full score-bar" style="width:30%"></div></div></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="flex-1 p-6 overflow-auto">
+
+    <!-- OVERVIEW VIEW -->
+    <div id="view-overview" class="space-y-6 fade-in">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><div class="flex items-center justify-between mb-3"><span class="text-sm text-slate-500 font-medium">Active Consultants</span><div class="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center"><span class="text-indigo-600 font-bold text-sm" id="kpiTotalIcon">0</span></div></div><div class="text-3xl font-bold text-slate-800" id="kpiTotal">0</div><div class="text-xs text-emerald-600 mt-1 font-medium">Total team size</div></div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><div class="flex items-center justify-between mb-3"><span class="text-sm text-slate-500 font-medium">Certification Rate</span><div class="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center"><span class="text-emerald-600 font-bold text-sm">%</span></div></div><div class="text-3xl font-bold text-slate-800" id="kpiCertRate">0%</div><div class="text-xs text-emerald-600 mt-1 font-medium" id="kpiCertDetail">0 certified</div></div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><div class="flex items-center justify-between mb-3"><span class="text-sm text-slate-500 font-medium">Avg Score (Today)</span><div class="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center"><span class="text-amber-600 font-bold text-sm">Avg</span></div></div><div class="text-3xl font-bold text-slate-800" id="kpiAvgScore">--</div><div class="text-xs text-amber-600 mt-1 font-medium">Based on QA checklists</div></div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><div class="flex items-center justify-between mb-3"><span class="text-sm text-slate-500 font-medium">At Risk Today</span><div class="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center"><span class="text-red-600 font-bold text-sm">!</span></div></div><div class="text-3xl font-bold text-slate-800" id="kpiAtRisk">0</div><div class="text-xs text-red-600 mt-1 font-medium">Need intervention</div></div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 class="font-bold text-slate-800">Performance Heatmap</h2>
+          <div class="flex items-center gap-2 text-xs"><span class="w-3 h-3 rounded bg-emerald-500"></span><span class="text-slate-500">85-100</span><span class="w-3 h-3 rounded bg-amber-400"></span><span class="text-slate-500">70-84</span><span class="w-3 h-3 rounded bg-orange-400"></span><span class="text-slate-500">55-69</span><span class="w-3 h-3 rounded bg-red-500"></span><span class="text-slate-500">&lt;55</span></div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+              <tr><th class="px-6 py-3 text-left font-semibold">Consultant</th><th class="px-4 py-3 text-center font-semibold">Tenure</th><th class="px-4 py-3 text-center font-semibold">Level</th><th class="px-4 py-3 text-center font-semibold">CHS</th><th class="px-4 py-3 text-center font-semibold">PAS</th><th class="px-4 py-3 text-center font-semibold">CES</th><th class="px-4 py-3 text-center font-semibold">Composite</th><th class="px-4 py-3 text-center font-semibold">Status</th><th class="px-4 py-3 text-center font-semibold">Action</th></tr>
+            </thead>
+            <tbody id="heatmapBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div class="px-6 py-4 border-b border-slate-100"><h2 class="font-bold text-slate-800">Top Weak Points Across Team</h2><p class="text-sm text-slate-500 mt-1">Most frequently unchecked items = what to train on</p></div>
+        <div class="p-6"><div id="teamWeakPoints" class="space-y-3"></div></div>
+      </div>
+    </div>
+
+    <!-- QA CHECKLIST VIEW -->
+    <div id="view-qa-checklist" class="space-y-6 hidden fade-in">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">Daily QA Checklist</h2>
+          <p class="text-sm text-slate-500 mt-1">Check what the consultant did WELL today. Unchecked = weak point.</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <input type="date" id="qaDateSelect" class="border border-slate-200 rounded-lg px-4 py-2 text-sm" onchange="loadDateData()">
+          <select id="qaConsultantSelect" class="border border-slate-200 rounded-lg px-4 py-2 text-sm" onchange="loadConsultantQA()"><option value="all">All Consultants</option></select>
+          <select id="qaCustomerSelect" class="border border-slate-200 rounded-lg px-4 py-2 text-sm" onchange="loadConsultantQA()"><option value="all">All Customers</option></select>
+        </div>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="text-sm text-amber-800"><span class="font-semibold">How it works:</span> Check = consultant is STRONG in this area. Leave unchecked = WEAK POINT. Score = % of checked items per domain. Select a date and customer to mark per call.</div>
+      </div>
+
+      <div id="qaChecklistContainer" class="space-y-6"></div>
+    </div>
+
+    <!-- MANAGE CONSULTANTS VIEW -->
+    <div id="view-consultants" class="space-y-6 hidden fade-in">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">Manage Consultants</h2>
+          <p class="text-sm text-slate-500 mt-1">Add, edit, or remove consultants from the team.</p>
+        </div>
+        <button onclick="openAddConsultantModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add Consultant
+        </button>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+            <tr>
+              <th class="px-6 py-3 text-left font-semibold">Consultant</th>
+              <th class="px-4 py-3 text-center font-semibold">Level</th>
+              <th class="px-4 py-3 text-center font-semibold">Tenure</th>
+              <th class="px-4 py-3 text-center font-semibold">Training Hours</th>
+              <th class="px-4 py-3 text-center font-semibold">Mock Calls</th>
+              <th class="px-4 py-3 text-center font-semibold">Certified</th>
+              <th class="px-4 py-3 text-center font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="consultantsTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CERTIFICATION VIEW -->
+    <div id="view-certification" class="space-y-6 hidden fade-in">
+      <div class="flex items-center justify-between"><h2 class="text-xl font-bold text-slate-800">Certification Center</h2></div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><div class="text-sm text-slate-500 mb-1">In Training</div><div class="text-3xl font-bold text-slate-800" id="certInTraining">0</div></div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><div class="text-sm text-slate-500 mb-1">Pending Assessment</div><div class="text-3xl font-bold text-slate-800" id="certPending">0</div></div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><div class="text-sm text-slate-500 mb-1">Recertification Due</div><div class="text-3xl font-bold text-slate-800" id="certRecert">0</div></div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100"><h3 class="font-bold text-slate-800">Certification Pipeline</h3></div>
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+            <tr><th class="px-6 py-3 text-left">Consultant</th><th class="px-4 py-3 text-center">Current Level</th><th class="px-4 py-3 text-center">Training Hours</th><th class="px-4 py-3 text-center">Mock Calls</th><th class="px-4 py-3 text-center">60-Day Score</th><th class="px-4 py-3 text-center">Readiness</th><th class="px-4 py-3 text-center">Action</th></tr>
+          </thead>
+          <tbody id="certPipeline" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <h3 class="font-bold text-slate-800 mb-4">Certification Criteria</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-3">
+            <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100"><div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">CA</div><div><div class="font-semibold text-sm">Certified Associate</div><div class="text-xs text-slate-500 mt-1">20 hrs training - 3 mock calls - Score >=75 - 30 discovery calls</div></div></div>
+            <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100"><div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-sm shrink-0">CS</div><div><div class="font-semibold text-sm">Certified Specialist</div><div class="text-xs text-slate-500 mt-1">40 hrs training - 5 supervised cases - NIW/Canada/Aus exam - Score >=80</div></div></div>
+            <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100"><div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 font-bold text-sm shrink-0">MT</div><div><div class="font-semibold text-sm">Master Trainer</div><div class="text-xs text-slate-500 mt-1">12 months as CS - Certified 3+ associates - Leadership approval</div></div></div>
+          </div>
+          <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <h4 class="font-semibold text-sm mb-3">Recertification Rules</h4>
+            <ul class="text-xs text-slate-600 space-y-2">
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold">&#10003;</span> Every 12 months mandatory</li>
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold">&#10003;</span> Triggered if score drops below 70 for 30 days</li>
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold">&#10003;</span> 30-day remediation plan before revocation</li>
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold">&#10003;</span> Appeal window: 72 hours for human review</li>
+              <li class="flex items-start gap-2"><span class="text-emerald-500 font-bold">&#10003;</span> New hires: 60-day ramp (scores weighted 0.7)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS VIEW -->
+    <div id="view-alerts" class="space-y-6 hidden fade-in">
+      <div class="flex items-center justify-between"><h2 class="text-xl font-bold text-slate-800">Alerts & Remediation Tasks</h2></div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-red-50 border border-red-200 rounded-xl p-5"><div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-sm font-semibold text-red-800">RED Alerts</span></div><div class="text-3xl font-bold text-red-700" id="alertRedCount">0</div><div class="text-xs text-red-600 mt-1">Immediate action required</div></div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-5"><div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span class="text-sm font-semibold text-amber-800">AMBER Alerts</span></div><div class="text-3xl font-bold text-amber-700" id="alertAmberCount">0</div><div class="text-xs text-amber-600 mt-1">Coach within 48 hours</div></div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5"><div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-sm font-semibold text-emerald-800">Resolved</span></div><div class="text-3xl font-bold text-emerald-700">0</div><div class="text-xs text-emerald-600 mt-1">This month</div></div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100"><h3 class="font-bold text-slate-800">Active Remediation Tasks</h3></div>
+        <div id="remediationTasks" class="divide-y divide-slate-100"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Add/Edit Consultant Modal -->
+<div id="consultantModal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl fade-in">
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="font-bold text-xl text-slate-800" id="modalTitle">Add Consultant</h2>
+      <button onclick="closeConsultantModal()" class="text-slate-400 hover:text-slate-600 text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">&times;</button>
+    </div>
+    <div class="p-6 space-y-4">
+      <input type="hidden" id="editConsultantId">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+        <input type="text" id="consultantName" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Ahmed Hassan">
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Certification Level</label>
+          <select id="consultantLevel" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="Trainee">Trainee</option>
+            <option value="Certified Associate">Certified Associate</option>
+            <option value="Certified Specialist">Certified Specialist</option>
+            <option value="Master Trainer">Master Trainer</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Tenure (years)</label>
+          <input type="number" id="consultantTenure" step="0.1" min="0" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 2.5">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Training Hours</label>
+          <input type="number" id="consultantHours" min="0" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 24">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Mock Calls Completed</label>
+          <input type="number" id="consultantMocks" min="0" class="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 3">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="checkbox" id="consultantCertified" class="w-4 h-4 rounded border-slate-300 text-indigo-600">
+        <label for="consultantCertified" class="text-sm text-slate-700">Certified (can handle client files)</label>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button onclick="saveConsultant()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg text-sm font-medium transition">Save Consultant</button>
+        <button onclick="closeConsultantModal()" class="px-6 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Consultant Detail Modal -->
+<div id="detailModal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-auto shadow-2xl fade-in">
+    <div class="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div id="detailAvatar" class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg"></div>
+        <div>
+          <h2 id="detailName" class="font-bold text-xl text-slate-800"></h2>
+          <p id="detailRole" class="text-sm text-slate-500"></p>
+        </div>
+      </div>
+      <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">&times;</button>
+    </div>
+    <div class="p-6 space-y-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-50 rounded-lg p-4 text-center border border-slate-100"><div class="text-xs text-slate-500 uppercase tracking-wider">Composite Score</div><div id="detailScore" class="text-2xl font-bold mt-1"></div></div>
+        <div class="bg-slate-50 rounded-lg p-4 text-center border border-slate-100"><div class="text-xs text-slate-500 uppercase tracking-wider">CHS</div><div id="detailCHS" class="text-2xl font-bold mt-1 text-blue-600"></div></div>
+        <div class="bg-slate-50 rounded-lg p-4 text-center border border-slate-100"><div class="text-xs text-slate-500 uppercase tracking-wider">PAS</div><div id="detailPAS" class="text-2xl font-bold mt-1 text-emerald-600"></div></div>
+        <div class="bg-slate-50 rounded-lg p-4 text-center border border-slate-100"><div class="text-xs text-slate-500 uppercase tracking-wider">CES</div><div id="detailCES" class="text-2xl font-bold mt-1 text-amber-600"></div></div>
+      </div>
+      <div>
+        <h3 class="font-semibold text-slate-800 mb-3">Score Trend (Last 30 Days)</h3>
+        <div class="h-48 bg-slate-50 rounded-lg border border-slate-100 flex items-end justify-around px-4 pb-4 pt-8 gap-2" id="detailChart"></div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div><h3 class="font-semibold text-slate-800 mb-3">Current Weak Points</h3><div id="detailWeakPoints" class="space-y-2"></div></div>
+        <div><h3 class="font-semibold text-slate-800 mb-3">Strengths</h3><div id="detailStrengths" class="space-y-2"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// ===================== CHECKLIST DEFINITIONS =====================
+const checklistItems = {
+  chs: [
+    { id: 'chs_1', label: 'Maintains chest register / authority voice throughout call' },
+    { id: 'chs_2', label: 'Pace controlled at 130-150 WPM (not rushed)' },
+    { id: 'chs_3', label: 'Uses silence discipline: 4+ seconds after diagnostic questions' },
+    { id: 'chs_4', label: 'Handles interruptions with Stop-Freeze-Volume Drop protocol' },
+    { id: 'chs_5', label: 'Zero upspeak incidents (statements sound like statements)' },
+    { id: 'chs_6', label: 'Sets clear next step / payment ask / close before ending' },
+    { id: 'chs_7', label: 'Active listening: paraphrases client concerns accurately' },
+    { id: 'chs_8', label: 'Controls call direction without being pushy' }
+  ],
+  pas: [
+    { id: 'pas_1', label: 'Intake form 100% complete before call (ECA status, spouse, job duties)' },
+    { id: 'pas_2', label: 'NOC code validated with duty mapping present' },
+    { id: 'pas_3', label: 'Evidence checklist uploaded and verified in CRM' },
+    { id: 'pas_4', label: 'ECA ordered / proof of funds verified / NIW letters requested' },
+    { id: 'pas_5', label: 'All SLA deadlines met (tasks within target days)' },
+    { id: 'pas_6', label: 'Correct product recommendation based on client profile' },
+    { id: 'pas_7', label: 'Fee disclosure done at correct stage (not rushed, not delayed)' },
+    { id: 'pas_8', label: 'Documentation accuracy: no errors in client data entry' }
+  ],
+  ces: [
+    { id: 'ces_1', label: 'Proposal sent within 24 hours of discovery call' },
+    { id: 'ces_2', label: 'Follow-up calls completed on scheduled dates' },
+    { id: 'ces_3', label: 'Objections handled with structured rebuttal (not defensive)' },
+    { id: 'ces_4', label: 'Payment collected or payment plan confirmed' },
+    { id: 'ces_5', label: 'No unnecessary reprice events after discovery' },
+    { id: 'ces_6', label: 'Conversion from qualified lead to paid client' },
+    { id: 'ces_7', label: 'Time from intake to first payment within target' },
+    { id: 'ces_8', label: 'Upsell / cross-sell attempted where appropriate' }
+  ]
+};
+
+const certLevels = ['Trainee', 'Certified Associate', 'Certified Specialist', 'Master Trainer'];
+
+// ===================== DEFAULT DATA =====================
+var defaultConsultants = [
+  { id: 1, name: "Ahmed Hassan", initials: "AH", level: "Certified Specialist", tenure: 3.5, certified: true, trainingHours: 45, mockCalls: 6 },
+  { id: 2, name: "Fatima Al-Rashid", initials: "FA", level: "Certified Specialist", tenure: 2.8, certified: true, trainingHours: 42, mockCalls: 5 },
+  { id: 3, name: "Raj Patel", initials: "RP", level: "Certified Associate", tenure: 1.2, certified: true, trainingHours: 24, mockCalls: 3 },
+  { id: 4, name: "Sarah Kim", initials: "SK", level: "Trainee", tenure: 0.4, certified: false, trainingHours: 12, mockCalls: 1 },
+  { id: 5, name: "Omar Khalil", initials: "OK", level: "Master Trainer", tenure: 5.1, certified: true, trainingHours: 60, mockCalls: 8 }
+];
+
+var defaultCustomers = [
+  { id: 'c1', name: 'Kumar Family', product: 'Canada PR' },
+  { id: 'c2', name: 'Al-Farsi Corp', product: 'Australia NIW' },
+  { id: 'c3', name: 'Zhang Household', product: 'Visit Visa UK' },
+  { id: 'c4', name: 'Hassan Brothers', product: 'Canada PNP' },
+  { id: 'c5', name: 'Patel Group', product: 'EB2 NIW USA' }
+];
+
+// ===================== STATE =====================
+var consultants = [];
+var customers = [];
+var qaData = {}; // qaData[consultantId][date][customerId][itemId] = true/false
+var nextConsultantId = 100;
+var nextCustomerId = 100;
+
+// ===================== STORAGE =====================
+function loadAllData() {
+  var savedConsultants = localStorage.getItem('hof_consultants');
+  var savedCustomers = localStorage.getItem('hof_customers');
+  var savedQA = localStorage.getItem('hof_qa_data');
+  var savedNextId = localStorage.getItem('hof_next_id');
+  var savedNextCustId = localStorage.getItem('hof_next_cust_id');
+
+  if (savedConsultants) {
+    consultants = JSON.parse(savedConsultants);
+  } else {
+    consultants = JSON.parse(JSON.stringify(defaultConsultants));
+  }
+
+  if (savedCustomers) {
+    customers = JSON.parse(savedCustomers);
+  } else {
+    customers = JSON.parse(JSON.stringify(defaultCustomers));
+  }
+
+  if (savedQA) {
+    qaData = JSON.parse(savedQA);
+  }
+
+  if (savedNextId) nextConsultantId = parseInt(savedNextId);
+  if (savedNextCustId) nextCustomerId = parseInt(savedNextCustId);
+}
+
+function saveAllData() {
+  localStorage.setItem('hof_consultants', JSON.stringify(consultants));
+  localStorage.setItem('hof_customers', JSON.stringify(customers));
+  localStorage.setItem('hof_qa_data', JSON.stringify(qaData));
+  localStorage.setItem('hof_next_id', nextConsultantId);
+  localStorage.setItem('hof_next_cust_id', nextCustomerId);
+  showToast('All data saved!');
+}
+
+function resetAllData() {
+  if (confirm('WARNING: This will delete ALL consultants, customers, and QA data. Are you sure?')) {
+    localStorage.removeItem('hof_consultants');
+    localStorage.removeItem('hof_customers');
+    localStorage.removeItem('hof_qa_data');
+    localStorage.removeItem('hof_next_id');
+    localStorage.removeItem('hof_next_cust_id');
+    location.reload();
+  }
+}
+
+function showToast(msg) {
+  var toast = document.createElement('div');
+  toast.className = 'fixed bottom-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium z-50 fade-in';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 3000);
+}
+
+function getInitials(name) {
+  return name.split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().slice(0, 2);
+}
+
+// ===================== SCORING =====================
+function getCheckedCount(consultantId, date, customerId, domain) {
+  var items = checklistItems[domain];
+  var checked = 0;
+  items.forEach(function(item) {
+    if (qaData[consultantId] && qaData[consultantId][date] && qaData[consultantId][date][customerId] && qaData[consultantId][date][customerId][item.id]) {
+      checked++;
+    }
+  });
+  return checked;
+}
+
+function getDomainScore(consultantId, date, customerId, domain) {
+  var total = checklistItems[domain].length;
+  var checked = getCheckedCount(consultantId, date, customerId, domain);
+  return Math.round((checked / total) * 100);
+}
+
+function getCompositeScore(consultantId, date, customerId) {
+  var chs = getDomainScore(consultantId, date, customerId, 'chs');
+  var pas = getDomainScore(consultantId, date, customerId, 'pas');
+  var ces = getDomainScore(consultantId, date, customerId, 'ces');
+  return Math.round(chs * 0.35 + pas * 0.35 + ces * 0.30);
+}
+
+// Get average across all customers for a date
+function getDailyAverage(consultantId, date) {
+  var scores = [];
+  customers.forEach(function(cust) {
+    var s = getCompositeScore(consultantId, date, cust.id);
+    if (s > 0 || hasAnyData(consultantId, date, cust.id)) scores.push(s);
+  });
+  return scores.length > 0 ? Math.round(scores.reduce(function(a,b){return a+b;}, 0) / scores.length) : 0;
+}
+
+function hasAnyData(consultantId, date, customerId) {
+  if (!qaData[consultantId] || !qaData[consultantId][date] || !qaData[consultantId][date][customerId]) return false;
+  return Object.keys(qaData[consultantId][date][customerId]).length > 0;
+}
+
+function getStatus(score) {
+  if (score >= 85) return 'Good';
+  if (score >= 70) return 'Amber';
+  if (score >= 55) return 'Amber';
+  return 'Red';
+}
+
+function getWeakPoints(consultantId, date, customerId) {
+  var weak = [];
+  ['chs','pas','ces'].forEach(function(domain) {
+    checklistItems[domain].forEach(function(item) {
+      if (!qaData[consultantId] || !qaData[consultantId][date] || !qaData[consultantId][date][customerId] || !qaData[consultantId][date][customerId][item.id]) {
+        weak.push({ domain: domain.toUpperCase(), item: item.label });
+      }
+    });
+  });
+  return weak;
+}
+
+function getStrengths(consultantId, date, customerId) {
+  var strong = [];
+  ['chs','pas','ces'].forEach(function(domain) {
+    checklistItems[domain].forEach(function(item) {
+      if (qaData[consultantId] && qaData[consultantId][date] && qaData[consultantId][date][customerId] && qaData[consultantId][date][customerId][item.id]) {
+        strong.push({ domain: domain.toUpperCase(), item: item.label });
+      }
+    });
+  });
+  return strong;
+}
+
+// ===================== STYLING HELPERS =====================
+function getScoreColor(score) {
+  if (score >= 85) return 'bg-emerald-500';
+  if (score >= 70) return 'bg-amber-400';
+  if (score >= 55) return 'bg-orange-400';
+  return 'bg-red-500';
+}
+
+function getScoreTextColor(score) {
+  if (score >= 85) return 'text-emerald-600';
+  if (score >= 70) return 'text-amber-600';
+  if (score >= 55) return 'text-orange-600';
+  return 'text-red-600';
+}
+
+function getStatusBadge(status) {
+  var colors = { 'Good': 'bg-emerald-100 text-emerald-700', 'Amber': 'bg-amber-100 text-amber-700', 'Red': 'bg-red-100 text-red-700' };
+  return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold ' + colors[status] + '">' + status + '</span>';
+}
+
+// ===================== RENDER: OVERVIEW =====================
+function renderHeatmap() {
+  var tbody = document.getElementById('heatmapBody');
+  var today = document.getElementById('qaDateSelect') ? document.getElementById('qaDateSelect').value : new Date().toISOString().split('T')[0];
+
+  tbody.innerHTML = consultants.map(function(c) {
+    var avgChs = 0, avgPas = 0, avgCes = 0, avgComp = 0, count = 0;
+    customers.forEach(function(cust) {
+      if (hasAnyData(c.id, today, cust.id)) {
+        avgChs += getDomainScore(c.id, today, cust.id, 'chs');
+        avgPas += getDomainScore(c.id, today, cust.id, 'pas');
+        avgCes += getDomainScore(c.id, today, cust.id, 'ces');
+        avgComp += getCompositeScore(c.id, today, cust.id);
+        count++;
+      }
+    });
+    var chs = count > 0 ? Math.round(avgChs / count) : 0;
+    var pas = count > 0 ? Math.round(avgPas / count) : 0;
+    var ces = count > 0 ? Math.round(avgCes / count) : 0;
+    var comp = count > 0 ? Math.round(avgComp / count) : 0;
+    var status = comp > 0 ? getStatus(comp) : 'N/A';
+
+    return '<tr class="hover:bg-slate-50 cursor-pointer transition" onclick="openDetailModal(' + c.id + ')">' +
+      '<td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">' + c.initials + '</div>' +
+      '<div><div class="font-medium text-slate-800">' + c.name + '</div><div class="text-xs text-slate-400">' + c.tenure + 'y tenure</div></div></div></td>' +
+      '<td class="px-4 py-4 text-center text-slate-600">' + c.tenure + 'y</td>' +
+      '<td class="px-4 py-4 text-center"><span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">' + c.level + '</span></td>' +
+      '<td class="px-4 py-4 text-center"><div class="flex items-center justify-center gap-2"><div class="w-16 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ' + getScoreColor(chs) + ' rounded-full score-bar" style="width:' + chs + '%"></div></div><span class="text-xs font-medium w-6">' + (chs > 0 ? chs : '-') + '</span></div></td>' +
+      '<td class="px-4 py-4 text-center"><div class="flex items-center justify-center gap-2"><div class="w-16 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ' + getScoreColor(pas) + ' rounded-full score-bar" style="width:' + pas + '%"></div></div><span class="text-xs font-medium w-6">' + (pas > 0 ? pas : '-') + '</span></div></td>' +
+      '<td class="px-4 py-4 text-center"><div class="flex items-center justify-center gap-2"><div class="w-16 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ' + getScoreColor(ces) + ' rounded-full score-bar" style="width:' + ces + '%"></div></div><span class="text-xs font-medium w-6">' + (ces > 0 ? ces : '-') + '</span></div></td>' +
+      '<td class="px-4 py-4 text-center font-bold ' + (comp > 0 ? getScoreTextColor(comp) : 'text-slate-400') + '">' + (comp > 0 ? comp : '-') + '</td>' +
+      '<td class="px-4 py-4 text-center">' + (status !== 'N/A' ? getStatusBadge(status) : '<span class="text-xs text-slate-400">No data</span>') + '</td>' +
+      '<td class="px-4 py-4 text-center"><button class="text-indigo-600 hover:text-indigo-800 text-xs font-medium px-2 py-1 rounded hover:bg-indigo-50 transition" onclick="event.stopPropagation();openDetailModal(' + c.id + ')">View</button></td>' +
+      '</tr>';
+  }).join('');
+
+  updateKPIs();
+  renderTeamWeakPoints();
+  updateAlertCounts();
+}
+
+function renderTeamWeakPoints() {
+  var today = document.getElementById('qaDateSelect') ? document.getElementById('qaDateSelect').value : new Date().toISOString().split('T')[0];
+  var counts = {};
+
+  consultants.forEach(function(c) {
+    customers.forEach(function(cust) {
+      if (hasAnyData(c.id, today, cust.id)) {
+        var weak = getWeakPoints(c.id, today, cust.id);
+        weak.forEach(function(w) {
+          var key = w.domain + ': ' + w.item;
+          counts[key] = (counts[key] || 0) + 1;
+        });
+      }
+    });
+  });
+
+  var sorted = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 5);
+
+  document.getElementById('teamWeakPoints').innerHTML = sorted.length > 0 ? sorted.map(function(item) {
+    var pct = Math.round((item[1] / consultants.length) * 100);
+    var color = pct >= 50 ? 'bg-red-500' : pct >= 30 ? 'bg-orange-400' : 'bg-amber-400';
+    return '<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">' +
+      '<div class="flex items-center gap-3"><span class="text-xs font-bold text-slate-500 w-12">' + item[0].split(':')[0] + '</span>' +
+      '<span class="text-sm text-slate-700">' + item[0].split(': ')[1] + '</span></div>' +
+      '<div class="flex items-center gap-3"><div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div class="h-full ' + color + ' rounded-full score-bar" style="width:' + pct + '%"></div></div>' +
+      '<span class="text-xs font-medium w-8 text-right">' + item[1] + '</span></div></div>';
+  }).join('') : '<div class="text-sm text-slate-400 italic p-4">No QA data for today yet. Go to Daily QA Checklist to start marking.</div>';
+}
+
+function updateKPIs() {
+  var today = document.getElementById('qaDateSelect') ? document.getElementById('qaDateSelect').value : new Date().toISOString().split('T')[0];
+  var totalScore = 0, scoredCount = 0, atRisk = 0, certifiedCount = 0;
+
+  consultants.forEach(function(c) {
+    var daily = getDailyAverage(c.id, today);
+    if (daily > 0) {
+      totalScore += daily;
+      scoredCount++;
+      if (daily < 70) atRisk++;
+    }
+    if (c.certified) certifiedCount++;
+  });
+
+  var avg = scoredCount > 0 ? Math.round(totalScore / scoredCount) : 0;
+
+  document.getElementById('kpiTotal').textContent = consultants.length;
+  document.getElementById('kpiTotalIcon').textContent = consultants.length;
+  document.getElementById('kpiAvgScore').textContent = avg > 0 ? avg : '--';
+  document.getElementById('kpiAtRisk').textContent = atRisk;
+  document.getElementById('kpiCertRate').textContent = consultants.length > 0 ? Math.round((certifiedCount / consultants.length) * 100) + '%' : '0%';
+  document.getElementById('kpiCertDetail').textContent = certifiedCount + ' of ' + consultants.length + ' certified';
+}
+
+function updateAlertCounts() {
+  var today = document.getElementById('qaDateSelect') ? document.getElementById('qaDateSelect').value : new Date().toISOString().split('T')[0];
+  var red = 0, amber = 0;
+
+  consultants.forEach(function(c) {
+    var avg = getDailyAverage(c.id, today);
+    if (avg > 0) {
+      if (avg < 55) red++;
+      else if (avg < 70) amber++;
+    }
+  });
+
+  document.getElementById('alertRedCount').textContent = red;
+  document.getElementById('alertAmberCount').textContent = amber;
+  document.getElementById('alertBadge').textContent = red + amber;
+}
+
+// ===================== RENDER: QA CHECKLIST =====================
+function renderQAChecklist() {
+  var container = document.getElementById('qaChecklistContainer');
+  var date = document.getElementById('qaDateSelect').value;
+  var selectedConsultant = document.getElementById('qaConsultantSelect').value;
+  var selectedCustomer = document.getElementById('qaCustomerSelect').value;
+
+  var filteredConsultants = selectedConsultant === 'all' ? consultants : consultants.filter(function(c) { return c.id == selectedConsultant; });
+  var filteredCustomers = selectedCustomer === 'all' ? customers : customers.filter(function(c) { return c.id == selectedCustomer; });
+
+  var html = '';
+
+  filteredConsultants.forEach(function(c) {
+    filteredCustomers.forEach(function(cust) {
+      var chsScore = getDomainScore(c.id, date, cust.id, 'chs');
+      var pasScore = getDomainScore(c.id, date, cust.id, 'pas');
+      var cesScore = getDomainScore(c.id, date, cust.id, 'ces');
+      var comp = getCompositeScore(c.id, date, cust.id);
+      var hasData = hasAnyData(c.id, date, cust.id);
+
+      var renderDomain = function(domain, title, colorClass) {
+        var items = checklistItems[domain];
+        return '<div class="mb-4"><h4 class="font-semibold text-sm mb-2 flex items-center gap-2"><span class="w-2 h-2 rounded-full ' + colorClass + '"></span>' + title + ' (' + (hasData ? getDomainScore(c.id, date, cust.id, domain) : 0) + '%)</h4>' +
+          '<div class="grid grid-cols-1 gap-1">' +
+          items.map(function(item) {
+            var checked = qaData[c.id] && qaData[c.id][date] && qaData[c.id][date][cust.id] && qaData[c.id][date][cust.id][item.id] ? 'checked' : '';
+            return '<label class="flex items-start gap-3 p-2 rounded-lg cursor-pointer hover:bg-slate-50 transition">' +
+              '<input type="checkbox" ' + checked + ' onchange="toggleChecklistItem(' + c.id + ', \'' + date + '\', \'' + cust.id + '\', \'' + item.id + '\', this.checked)" class="mt-0.5 w-4 h-4 rounded border-slate-300 text-indigo-600">' +
+              '<span class="text-sm text-slate-700">' + item.label + '</span>' +
+              '</label>';
+          }).join('') +
+          '</div></div>';
+      };
+
+      html += '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">' +
+        '<div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">' +
+        '<div class="flex items-center gap-4">' +
+        '<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">' + c.initials + '</div>' +
+        '<div><div class="font-bold text-slate-800">' + c.name + '</div><div class="text-xs text-slate-500">' + c.level + '</div></div></div>' +
+        '<div class="h-8 w-px bg-slate-200"></div>' +
+        '<div><div class="text-xs text-slate-400">Customer</div><div class="font-medium text-sm text-slate-700">' + cust.name + '</div><div class="text-xs text-slate-400">' + cust.product + '</div></div>' +
+        '</div>' +
+        '<div class="flex items-center gap-4">' +
+        '<div class="text-center"><div class="text-xs text-slate-400">CHS</div><div class="font-bold ' + getScoreTextColor(chsScore) + '">' + (hasData ? chsScore : '-') + '</div></div>' +
+        '<div class="text-center"><div class="text-xs text-slate-400">PAS</div><div class="font-bold ' + getScoreTextColor(pasScore) + '">' + (hasData ? pasScore : '-') + '</div></div>' +
+        '<div class="text-center"><div class="text-xs text-slate-400">CES</div><div class="font-bold ' + getScoreTextColor(cesScore) + '">' + (hasData ? cesScore : '-') + '</div></div>' +
+        '<div class="text-center px-3 py-1 bg-slate-100 rounded-lg"><div class="text-xs text-slate-400">Composite</div><div class="font-bold text-lg ' + (hasData ? getScoreTextColor(comp) : 'text-slate-400') + '">' + (hasData ? comp : '-') + '</div></div>' +
+        '</div></div>' +
+        '<div class="p-6">' +
+        renderDomain('chs', 'Call Handling (CHS)', 'bg-blue-500') +
+        renderDomain('pas', 'Process Adherence (PAS)', 'bg-emerald-500') +
+        renderDomain('ces', 'Closing Effectiveness (CES)', 'bg-amber-500') +
+        '</div></div>';
+    });
+  });
+
+  container.innerHTML = html || '<div class="text-center py-12 text-slate-400">No consultants or customers found. Add them in Manage Consultants.</div>';
+}
+
+function toggleChecklistItem(consultantId, date, customerId, itemId, checked) {
+  if (!qaData[consultantId]) qaData[consultantId] = {};
+  if (!qaData[consultantId][date]) qaData[consultantId][date] = {};
+  if (!qaData[consultantId][date][customerId]) qaData[consultantId][date][customerId] = {};
+  qaData[consultantId][date][customerId][itemId] = checked;
+  saveAllData();
+  renderQAChecklist();
+  renderHeatmap();
+}
+
+function loadDateData() {
+  renderQAChecklist();
+  renderHeatmap();
+}
+
+function loadConsultantQA() {
+  renderQAChecklist();
+}
+
+// ===================== RENDER: MANAGE CONSULTANTS =====================
+function renderConsultantsTable() {
+  var tbody = document.getElementById('consultantsTableBody');
+  tbody.innerHTML = consultants.map(function(c) {
+    return '<tr class="hover:bg-slate-50 transition">' +
+      '<td class="px-6 py-4"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">' + c.initials + '</div><div class="font-medium text-slate-800">' + c.name + '</div></div></td>' +
+      '<td class="px-4 py-4 text-center"><span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">' + c.level + '</span></td>' +
+      '<td class="px-4 py-4 text-center text-slate-600">' + c.tenure + 'y</td>' +
+      '<td class="px-4 py-4 text-center text-slate-600">' + c.trainingHours + '</td>' +
+      '<td class="px-4 py-4 text-center text-slate-600">' + c.mockCalls + '</td>' +
+      '<td class="px-4 py-4 text-center">' + (c.certified ? '<span class="text-emerald-600 text-xs font-medium">&#10003; Yes</span>' : '<span class="text-slate-400 text-xs">No</span>') + '</td>' +
+      '<td class="px-4 py-4 text-center"><button onclick="editConsultant(' + c.id + ')" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium mr-3">Edit</button><button onclick="deleteConsultant(' + c.id + ')" class="text-red-600 hover:text-red-800 text-xs font-medium">Delete</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function openAddConsultantModal() {
+  document.getElementById('modalTitle').textContent = 'Add Consultant';
+  document.getElementById('editConsultantId').value = '';
+  document.getElementById('consultantName').value = '';
+  document.getElementById('consultantLevel').value = 'Trainee';
+  document.getElementById('consultantTenure').value = '';
+  document.getElementById('consultantHours').value = '0';
+  document.getElementById('consultantMocks').value = '0';
+  document.getElementById('consultantCertified').checked = false;
+  document.getElementById('consultantModal').classList.remove('hidden');
+  document.getElementById('consultantModal').classList.add('flex');
+}
+
+function editConsultant(id) {
+  var c = consultants.find(function(x) { return x.id === id; });
+  if (!c) return;
+  document.getElementById('modalTitle').textContent = 'Edit Consultant';
+  document.getElementById('editConsultantId').value = c.id;
+  document.getElementById('consultantName').value = c.name;
+  document.getElementById('consultantLevel').value = c.level;
+  document.getElementById('consultantTenure').value = c.tenure;
+  document.getElementById('consultantHours').value = c.trainingHours;
+  document.getElementById('consultantMocks').value = c.mockCalls;
+  document.getElementById('consultantCertified').checked = c.certified;
+  document.getElementById('consultantModal').classList.remove('hidden');
+  document.getElementById('consultantModal').classList.add('flex');
+}
+
+function saveConsultant() {
+  var id = document.getElementById('editConsultantId').value;
+  var name = document.getElementById('consultantName').value.trim();
+  var level = document.getElementById('consultantLevel').value;
+  var tenure = parseFloat(document.getElementById('consultantTenure').value) || 0;
+  var hours = parseInt(document.getElementById('consultantHours').value) || 0;
+  var mocks = parseInt(document.getElementById('consultantMocks').value) || 0;
+  var certified = document.getElementById('consultantCertified').checked;
+
+  if (!name) { alert('Please enter a name'); return; }
+
+  if (id) {
+    var c = consultants.find(function(x) { return x.id == id; });
+    if (c) {
+      c.name = name;
+      c.initials = getInitials(name);
+      c.level = level;
+      c.tenure = tenure;
+      c.trainingHours = hours;
+      c.mockCalls = mocks;
+      c.certified = certified;
+    }
+  } else {
+    consultants.push({
+      id: nextConsultantId++,
+      name: name,
+      initials: getInitials(name),
+      level: level,
+      tenure: tenure,
+      certified: certified,
+      trainingHours: hours,
+      mockCalls: mocks
+    });
+  }
+
+  saveAllData();
+  closeConsultantModal();
+  renderConsultantsTable();
+  populateDropdowns();
+  renderHeatmap();
+  renderCertPipeline();
+}
+
+function deleteConsultant(id) {
+  if (!confirm('Delete this consultant and all their QA data?')) return;
+  consultants = consultants.filter(function(c) { return c.id !== id; });
+  delete qaData[id];
+  saveAllData();
+  renderConsultantsTable();
+  populateDropdowns();
+  renderHeatmap();
+}
+
+function closeConsultantModal() {
+  document.getElementById('consultantModal').classList.add('hidden');
+  document.getElementById('consultantModal').classList.remove('flex');
+}
+
+// ===================== RENDER: CERTIFICATION =====================
+function renderCertPipeline() {
+  var pipeline = consultants.filter(function(c) { return !c.certified || c.level === 'Certified Associate'; }).map(function(c) {
+    var score60 = get60DayAverage(c.id);
+    var target = c.level === 'Trainee' ? 'Certified Associate' : 'Certified Specialist';
+    var hoursNeeded = c.level === 'Trainee' ? 20 : 40;
+    var mocksNeeded = c.level === 'Trainee' ? 3 : 5;
+    var readiness = Math.round((score60 / 100) * 40 + (c.trainingHours / hoursNeeded) * 30 + (c.mockCalls / mocksNeeded) * 30);
+    readiness = Math.min(100, readiness);
+    return { name: c.name, current: c.level, target: target, hours: c.trainingHours, mock: c.mockCalls, score60: score60, readiness: readiness };
+  });
+
+  document.getElementById('certPipeline').innerHTML = pipeline.map(function(p) {
+    var readyColor = p.readiness >= 75 ? 'bg-emerald-500' : p.readiness >= 50 ? 'bg-amber-400' : 'bg-red-500';
+    var canCertify = p.readiness >= 75 && p.hours >= (p.target === 'Certified Associate' ? 20 : 40) && p.mock >= (p.target === 'Certified Associate' ? 3 : 5);
+    return '<tr class="hover:bg-slate-50 transition">' +
+      '<td class="px-6 py-4 font-medium text-slate-800">' + p.name + '</td>' +
+      '<td class="px-4 py-4 text-center"><span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">' + p.current + '</span></td>' +
+      '<td class="px-4 py-4 text-center">' + p.hours + '/' + (p.target === 'Certified Associate' ? '20' : '40') + ' hrs</td>' +
+      '<td class="px-4 py-4 text-center">' + p.mock + '/' + (p.target === 'Certified Associate' ? '3' : '5') + ' mocks</td>' +
+      '<td class="px-4 py-4 text-center font-bold ' + getScoreTextColor(p.score60) + '">' + p.score60 + '</td>' +
+      '<td class="px-4 py-4"><div class="flex items-center gap-2"><div class="w-20 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ' + readyColor + ' rounded-full score-bar" style="width:' + p.readiness + '%"></div></div><span class="text-xs font-medium">' + p.readiness + '%</span></div></td>' +
+      '<td class="px-4 py-4 text-center">' + (canCertify ? '<button class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition">Certify Now</button>' : '<button class="bg-slate-100 text-slate-400 text-xs px-3 py-1.5 rounded-lg cursor-not-allowed">Not Ready</button>') + '</td></tr>';
+  }).join('');
+
+  document.getElementById('certInTraining').textContent = consultants.filter(function(c) { return !c.certified; }).length;
+  document.getElementById('certPending').textContent = pipeline.filter(function(p) { return p.readiness >= 50 && p.readiness < 75; }).length;
+  document.getElementById('certRecert').textContent = consultants.filter(function(c) { return c.certified && get60DayAverage(c.id) < 75; }).length;
+}
+
+function get60DayAverage(consultantId) {
+  var scores = [];
+  var today = new Date();
+  for (var i = 0; i < 60; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() - i);
+    var dateStr = d.toISOString().split('T')[0];
+    var daily = getDailyAverage(consultantId, dateStr);
+    if (daily > 0) scores.push(daily);
+  }
+  return scores.length > 0 ? Math.round(scores.reduce(function(a,b){return a+b;}, 0) / scores.length) : 0;
+}
+
+// ===================== RENDER: ALERTS =====================
+function renderRemediation() {
+  var today = document.getElementById('qaDateSelect') ? document.getElementById('qaDateSelect').value : new Date().toISOString().split('T')[0];
+  var tasks = [];
+
+  consultants.forEach(function(c) {
+    var avg = getDailyAverage(c.id, today);
+    if (avg > 0) {
+      if (avg < 55) {
+        tasks.push({ consultant: c.name, type: 'RED', task: 'Immediate coaching - Composite ' + avg, assigned: 'Manager', due: 'ASAP' });
+      } else if (avg < 70) {
+        tasks.push({ consultant: c.name, type: 'AMBER', task: 'Review weak points - Score ' + avg, assigned: 'Senior Trainer', due: '48 hrs' });
+      }
+    }
+  });
+
+  document.getElementById('remediationTasks').innerHTML = tasks.length > 0 ? tasks.map(function(t) {
+    var color = t.type === 'RED' ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-amber-500';
+    return '<div class="px-6 py-4 ' + color + ' hover:bg-slate-50 transition">' +
+      '<div class="flex items-start justify-between"><div><div class="font-medium text-slate-800">' + t.task + '</div>' +
+      '<div class="text-xs text-slate-500 mt-1">Consultant: ' + t.consultant + ' - Assigned: ' + t.assigned + ' - Due: ' + t.due + '</div></div>' +
+      '<span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">' + t.type + '</span></div></div>';
+  }).join('') : '<div class="px-6 py-8 text-center text-slate-400">No alerts today. Team is performing well!</div>';
+}
+
+// ===================== DETAIL MODAL =====================
+function openDetailModal(id) {
+  var c = consultants.find(function(x) { return x.id === id; });
+  if (!c) return;
+  var today = document.getElementById('qaDateSelect') ? document.getElementById('qaDateSelect').value : new Date().toISOString().split('T')[0];
+  var avgChs = 0, avgPas = 0, avgCes = 0, avgComp = 0, count = 0;
+
+  customers.forEach(function(cust) {
+    if (hasAnyData(c.id, today, cust.id)) {
+      avgChs += getDomainScore(c.id, today, cust.id, 'chs');
+      avgPas += getDomainScore(c.id, today, cust.id, 'pas');
+      avgCes += getDomainScore(c.id, today, cust.id, 'ces');
+      avgComp += getCompositeScore(c.id, today, cust.id);
+      count++;
+    }
+  });
+
+  var chs = count > 0 ? Math.round(avgChs / count) : 0;
+  var pas = count > 0 ? Math.round(avgPas / count) : 0;
+  var ces = count > 0 ? Math.round(avgCes / count) : 0;
+  var comp = count > 0 ? Math.round(avgComp / count) : 0;
+
+  document.getElementById('detailAvatar').textContent = c.initials;
+  document.getElementById('detailName').textContent = c.name;
+  document.getElementById('detailRole').textContent = c.level + ' - ' + c.tenure + ' years - 60-day avg: ' + get60DayAverage(c.id);
+  document.getElementById('detailScore').textContent = comp > 0 ? comp : '-';
+  document.getElementById('detailScore').className = 'text-2xl font-bold mt-1 ' + (comp > 0 ? getScoreTextColor(comp) : 'text-slate-400');
+  document.getElementById('detailCHS').textContent = chs > 0 ? chs : '-';
+  document.getElementById('detailPAS').textContent = pas > 0 ? pas : '-';
+  document.getElementById('detailCES').textContent = ces > 0 ? ces : '-';
+
+  // 30-day trend
+  var chart = document.getElementById('detailChart');
+  var trend = [];
+  for (var i = 29; i >= 0; i--) {
+    var d = new Date();
+    d.setDate(d.getDate() - i);
+    var ds = d.toISOString().split('T')[0];
+    var avg = getDailyAverage(c.id, ds);
+    if (avg > 0) trend.push({ date: ds.slice(5), score: avg });
+  }
+
+  if (trend.length > 0) {
+    var maxScore = Math.max.apply(null, trend.map(function(t) { return t.score; }).concat([1]));
+    chart.innerHTML = trend.map(function(t) {
+      return '<div class="flex flex-col items-center gap-1 flex-1"><div class="w-full bg-indigo-500 rounded-t transition-all duration-500 hover:bg-indigo-600 relative group cursor-pointer" style="height: ' + (t.score/maxScore*100) + '%">' +
+        '<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10">' + t.score + '</div></div>' +
+        '<span class="text-[10px] text-slate-400">' + t.date + '</span></div>';
+    }).join('');
+  } else {
+    chart.innerHTML = '<div class="flex items-center justify-center w-full h-full text-slate-400 text-sm">No historical data yet</div>';
+  }
+
+  // Aggregate weak points across all customers today
+  var allWeak = [];
+  customers.forEach(function(cust) {
+    if (hasAnyData(c.id, today, cust.id)) {
+      var weak = getWeakPoints(c.id, today, cust.id);
+      allWeak = allWeak.concat(weak);
+    }
+  });
+
+  // Deduplicate weak points
+  var uniqueWeak = [];
+  var seen = {};
+  allWeak.forEach(function(w) {
+    var key = w.domain + '|' + w.item;
+    if (!seen[key]) { seen[key] = true; uniqueWeak.push(w); }
+  });
+
+  document.getElementById('detailWeakPoints').innerHTML = uniqueWeak.length > 0 ? uniqueWeak.slice(0, 8).map(function(w) {
+    return '<div class="flex items-start gap-2 p-2 bg-red-50 rounded-lg border border-red-100"><span class="text-xs font-bold text-red-500 w-8">' + w.domain + '</span><span class="text-xs text-slate-700">' + w.item + '</span></div>';
+  }).join('') : '<div class="text-sm text-slate-400 italic">No weak points - excellent!</div>';
+
+  var allStrong = [];
+  customers.forEach(function(cust) {
+    if (hasAnyData(c.id, today, cust.id)) {
+      var strong = getStrengths(c.id, today, cust.id);
+      allStrong = allStrong.concat(strong);
+    }
+  });
+
+  var uniqueStrong = [];
+  var seenStrong = {};
+  allStrong.forEach(function(s) {
+    var key = s.domain + '|' + s.item;
+    if (!seenStrong[key]) { seenStrong[key] = true; uniqueStrong.push(s); }
+  });
+
+  document.getElementById('detailStrengths').innerHTML = uniqueStrong.length > 0 ? uniqueStrong.slice(0, 8).map(function(s) {
+    return '<div class="flex items-start gap-2 p-2 bg-emerald-50 rounded-lg border border-emerald-100"><span class="text-xs font-bold text-emerald-500 w-8">' + s.domain + '</span><span class="text-xs text-slate-700">' + s.item + '</span></div>';
+  }).join('') : '<div class="text-sm text-slate-400 italic">No strengths marked yet</div>';
+
+  document.getElementById('detailModal').classList.remove('hidden');
+  document.getElementById('detailModal').classList.add('flex');
+}
+
+function closeDetailModal() {
+  document.getElementById('detailModal').classList.add('hidden');
+  document.getElementById('detailModal').classList.remove('flex');
+}
+
+// ===================== NAVIGATION =====================
+function switchView(view) {
+  ['overview','qa-checklist','consultants','certification','alerts'].forEach(function(v) {
+    document.getElementById('view-' + v).classList.add('hidden');
+    document.getElementById('nav-' + v).classList.remove('bg-indigo-50', 'text-indigo-700');
+    document.getElementById('nav-' + v).classList.add('text-slate-600');
+  });
+  document.getElementById('view-' + view).classList.remove('hidden');
+  document.getElementById('nav-' + view).classList.add('bg-indigo-50', 'text-indigo-700');
+  document.getElementById('nav-' + view).classList.remove('text-slate-600');
+
+  if (view === 'qa-checklist') renderQAChecklist();
+  if (view === 'consultants') renderConsultantsTable();
+  if (view === 'certification') renderCertPipeline();
+  if (view === 'alerts') renderRemediation();
+}
+
+function populateDropdowns() {
+  var cSelect = document.getElementById('qaConsultantSelect');
+  var custSelect = document.getElementById('qaCustomerSelect');
+
+  // Save current selection
+  var cVal = cSelect.value;
+  var custVal = custSelect.value;
+
+  // Clear and repopulate consultants
+  cSelect.innerHTML = '<option value="all">All Consultants</option>';
+  consultants.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    cSelect.appendChild(opt);
+  });
+  cSelect.value = cVal;
+
+  // Clear and repopulate customers
+  custSelect.innerHTML = '<option value="all">All Customers</option>';
+  customers.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name + ' (' + c.product + ')';
+    custSelect.appendChild(opt);
+  });
+  custSelect.value = custVal;
+}
+
+function exportReport() {
+  var today = document.getElementById('qaDateSelect') ? document.getElementById('qaDateSelect').value : new Date().toISOString().split('T')[0];
+  var csv = 'Consultant,Level,Tenure,Date,Customer,Product,CHS,PAS,CES,Composite,Status\n';
+  consultants.forEach(function(c) {
+    customers.forEach(function(cust) {
+      if (hasAnyData(c.id, today, cust.id)) {
+        var chs = getDomainScore(c.id, today, cust.id, 'chs');
+        var pas = getDomainScore(c.id, today, cust.id, 'pas');
+        var ces = getDomainScore(c.id, today, cust.id, 'ces');
+        var comp = getCompositeScore(c.id, today, cust.id);
+        csv += c.name + ',' + c.level + ',' + c.tenure + ',' + today + ',' + cust.name + ',' + cust.product + ',' + chs + ',' + pas + ',' + ces + ',' + comp + ',' + getStatus(comp) + '\n';
+      }
+    });
+  });
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = window.URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'hof_qa_report_' + today + '.csv';
+  a.click();
+}
+
+function createRemediationTask() {
+  alert('Remediation task creation: Select consultant from dropdown and assign action items.');
+}
+
+// ===================== INIT =====================
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-AE', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+document.getElementById('qaDateSelect').value = new Date().toISOString().split('T')[0];
+
+loadAllData();
+populateDropdowns();
+renderHeatmap();
+renderConsultantsTable();
+renderCertPipeline();
+</script>
+</body>
+</html>
