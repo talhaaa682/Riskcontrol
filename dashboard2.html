@@ -152,12 +152,13 @@ body{font-family:'Inter',sans-serif;background:#f8fafc;}
 <div id="consultantModal" class="fixed inset-0 modal-overlay z-[60] hidden flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm">
     <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-      <h3 class="font-bold text-slate-800">Add Consultant</h3>
+      <h3 id="consultantModalTitle" class="font-bold text-slate-800">Add Consultant</h3>
       <button onclick="closeConsultantModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
     </div>
     <div class="p-6 space-y-4">
       <div><label class="text-xs font-medium text-slate-500">Full Name</label><input id="consultantName" type="text" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
-      <div><label class="text-xs font-medium text-slate-500">Role / Level</label>
+      <div><label class="text-xs font-medium text-slate-500">Floor Joined Date</label><input id="consultantJoinedDate" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+      <div><label class="text-xs font-medium text-slate-500">Role / Designation</label>
         <select id="consultantLevel" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200">
           <option value="Trainee">Trainee</option><option value="Consultant">Consultant</option><option value="Senior Consultant">Senior Consultant</option><option value="Team Lead">Team Lead</option>
         </select>
@@ -218,10 +219,11 @@ let state = {
   period: 'today',
   currentView: 'overview',
   consultants: [
-    { id: 'c1', name: 'Aiman', certLevel: 'Trainee', certified: true }
+    { id: 'c1', name: 'Aiman', joinedDate: '2026-05-01', certLevel: 'Trainee', certified: true }
   ],
   entries: [],
-  editingEntryId: null
+  editingEntryId: null,
+  editingConsultantId: null
 };
 let charts = {};
 
@@ -241,7 +243,6 @@ function updateSyncStatus(text, color) {
 async function saveData() {
   updateSyncStatus('Syncing...', 'amber');
   
-  // Save locally first
   localStorage.setItem('hof_qa_state_v2', JSON.stringify({
     consultants: state.consultants,
     entries: state.entries
@@ -272,7 +273,6 @@ async function saveData() {
 async function loadData() {
   updateSyncStatus('Loading...', 'amber');
   
-  // Try local first for instantaneous UI load
   const local = localStorage.getItem('hof_qa_state_v2');
   if (local) {
     try {
@@ -329,6 +329,37 @@ function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'
 function avg(arr){ return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 function groupByConsultant(entries){ return entries.reduce((acc,e)=>{ (acc[e.consultantId]=acc[e.consultantId]||[]).push(e); return acc; },{}); }
 function groupByProduct(entries){ return entries.reduce((acc,e)=>{ const k=e.product||'Unspecified'; (acc[k]=acc[k]||[]).push(e); return acc; },{}); }
+
+/* ============ TENURE CALCULATIONS ============ */
+function calculateTenure(joinedDateISO) {
+  if (!joinedDateISO) return { days: 0, months: 0, level: 'Non-Tenured 1', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200', text: 'New' };
+  
+  const start = new Date(joinedDateISO + 'T00:00:00');
+  const now = new Date();
+  const diffTime = Math.max(0, now - start);
+  const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const months = (days / 30.4375).toFixed(1);
+
+  let level = 'Non-Tenured 1';
+  let badgeColor = 'bg-rose-100 text-rose-800 border-rose-200';
+  let text = `${days}d on floor`;
+
+  if (days >= 60) { // More than 2 months (approx 60+ days)
+    level = 'Tenured';
+    badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    text = `${months}m on floor`;
+  } else if (days >= 30) { // Up to 2 months (30-60 days)
+    level = 'Non-Tenured 2';
+    badgeColor = 'bg-amber-100 text-amber-800 border-amber-200';
+    text = `${months}m on floor`;
+  } else { // Under 1 month (< 30 days)
+    level = 'Non-Tenured 1';
+    badgeColor = 'bg-slate-100 text-slate-800 border-slate-200';
+    text = `${days}d on floor`;
+  }
+
+  return { days, months, level, badgeColor, text };
+}
 
 function inPeriod(iso, period){
   const d = new Date(iso+'T00:00:00');
@@ -389,9 +420,16 @@ function emptyState(title, subtitle){
 function entryRow(e){
   const c = consultantById(e.consultantId);
   const comp = composite(e);
+  const tenure = calculateTenure(c?.joinedDate);
   return `<div class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition group">
     <div class="w-9 h-9 rounded-full ${c?colorFor(c.id):'bg-slate-100'} flex items-center justify-center text-sm font-bold shrink-0">${c?initials(c.name):'?'}</div>
-    <div class="min-w-[140px]"><p class="text-sm font-semibold text-slate-800">${esc(c?c.name:'Unknown')}</p><p class="text-xs text-slate-400">${esc(e.date)}</p></div>
+    <div class="min-w-[150px]">
+      <p class="text-sm font-semibold text-slate-800 flex items-center gap-1.5">${esc(c?c.name:'Unknown')}</p>
+      <div class="flex items-center gap-1 mt-0.5">
+        <span class="text-[10px] px-1.5 py-0.2 rounded border ${tenure.badgeColor}">${tenure.level}</span>
+        <span class="text-xs text-slate-400">&bull; ${esc(e.date)}</span>
+      </div>
+    </div>
     <div class="min-w-[160px]"><p class="text-xs text-slate-400">Customer</p><p class="text-sm font-medium text-slate-700">${esc(e.customerName)||'&mdash;'}</p><p class="text-xs text-slate-400">${esc(e.product)}</p></div>
     <div class="flex items-center gap-3 shrink-0 ml-auto">
       <div class="text-center w-10"><p class="text-[10px] text-slate-400">CHS</p><p class="text-xs font-bold ${scoreColor(chsScore(e))}">${chsScore(e)}%</p></div>
@@ -481,10 +519,17 @@ function renderLeaderboard() {
     html += emptyState('No data available', 'Complete reviews to rank consultants.');
   } else {
     rankings.forEach((r, idx) => {
+      const tenure = calculateTenure(r.consultant?.joinedDate);
       html += `<div class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50">
         <div class="flex items-center gap-3"><span class="font-bold text-slate-400 w-4">#${idx+1}</span>
         <div class="w-8 h-8 rounded-full ${r.consultant?colorFor(r.consultant.id):'bg-slate-100'} flex items-center justify-center font-bold text-xs">${r.consultant?initials(r.consultant.name):'?'}</div>
-        <div><p class="font-semibold text-slate-800 text-sm">${esc(r.consultant?r.consultant.name:'Unknown')}</p><p class="text-xs text-slate-400">${r.count} Audits</p></div></div>
+        <div>
+          <p class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+            ${esc(r.consultant?r.consultant.name:'Unknown')}
+            <span class="text-[10px] px-1.5 py-0.2 rounded border ${tenure.badgeColor}">${tenure.level}</span>
+          </p>
+          <p class="text-xs text-slate-400">${r.count} Audits &bull; ${tenure.text}</p>
+        </div></div>
         <span class="font-bold text-base ${scoreColor(r.avgScore)}">${r.avgScore}%</span></div>`;
     });
   }
@@ -515,16 +560,35 @@ function renderProductLine() {
 
 function renderConsultants() {
   let html = `<div class="space-y-4">
-    <div class="flex justify-between items-center"><h2 class="font-bold text-slate-800">Team Roster</h2>
+    <div class="flex justify-between items-center"><h2 class="font-bold text-slate-800">Team Roster & Tenures</h2>
     <button onclick="openConsultantModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium">+ Add Consultant</button></div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
 
-  state.consultants.forEach(c => {
-    html += `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
-      <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full ${colorFor(c.id)} flex items-center justify-center font-bold">${initials(c.name)}</div>
-      <div><p class="font-bold text-slate-800 text-sm">${esc(c.name)}</p><p class="text-xs text-slate-400">${esc(c.certLevel)}</p></div></div>
-      <span class="text-xs px-2 py-1 rounded-full ${c.certified?'bg-emerald-50 text-emerald-600':'bg-amber-50 text-amber-600'}">${c.certified?'Certified':'Trainee'}</span></div>`;
-  });
+  if(!state.consultants.length) {
+    html += emptyState('No consultants found', 'Click "+ Add Consultant" to add team members.');
+  } else {
+    state.consultants.forEach(c => {
+      const tenure = calculateTenure(c.joinedDate);
+      html += `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between relative group">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-full ${colorFor(c.id)} flex items-center justify-center font-bold text-sm shrink-0">${initials(c.name)}</div>
+          <div>
+            <p class="font-bold text-slate-800 text-sm">${esc(c.name)}</p>
+            <p class="text-xs text-slate-400">${esc(c.certLevel || 'Consultant')}</p>
+            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tenure.badgeColor}">${tenure.level}</span>
+              <span class="text-xs text-slate-500">${tenure.text}</span>
+            </div>
+            ${c.joinedDate ? `<p class="text-[10px] text-slate-400 mt-1">Joined: ${esc(c.joinedDate)}</p>` : ''}
+          </div>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="openConsultantModal('${c.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+          <button onclick="deleteConsultant('${c.id}')" class="p-1 text-slate-400 hover:text-red-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+        </div>
+      </div>`;
+    });
+  }
 
   html += '</div></div>';
   document.getElementById('view-consultants').innerHTML = html;
@@ -600,7 +664,6 @@ function openEntryModal(entryId = null) {
       document.getElementById('entryCaseLink').value = e.caseLink || '';
       document.getElementById('entryNotes').value = e.notes || '';
       
-      // Populate checkboxes
       ['chs','pas','ces'].forEach(cat => {
         const checks = e[cat+'Checks'] || [];
         document.querySelectorAll(`input[data-cat="${cat}"]`).forEach((box, i) => { box.checked = !!checks[i]; });
@@ -672,23 +735,67 @@ function deleteEntry(id) {
   renderCurrentView();
 }
 
-function openConsultantModal() { document.getElementById('consultantModal').classList.remove('hidden'); }
-function closeConsultantModal() { document.getElementById('consultantModal').classList.add('hidden'); }
+/* ============ CONSULTANT HANDLERS ============ */
+function openConsultantModal(consultantId = null) {
+  state.editingConsultantId = consultantId;
+  const title = document.getElementById('consultantModalTitle');
+  
+  if (consultantId) {
+    const c = state.consultants.find(x => x.id === consultantId);
+    if (c) {
+      title.textContent = "Edit Consultant";
+      document.getElementById('consultantName').value = c.name || '';
+      document.getElementById('consultantJoinedDate').value = c.joinedDate || todayISO();
+      document.getElementById('consultantLevel').value = c.certLevel || 'Consultant';
+      document.getElementById('consultantCertified').checked = !!c.certified;
+    }
+  } else {
+    title.textContent = "Add Consultant";
+    document.getElementById('consultantName').value = '';
+    document.getElementById('consultantJoinedDate').value = todayISO();
+    document.getElementById('consultantLevel').value = 'Consultant';
+    document.getElementById('consultantCertified').checked = true;
+  }
+  
+  document.getElementById('consultantModal').classList.remove('hidden');
+}
+
+function closeConsultantModal() { 
+  state.editingConsultantId = null;
+  document.getElementById('consultantModal').classList.add('hidden'); 
+}
 
 function submitConsultant() {
   const name = document.getElementById('consultantName').value.trim();
   if(!name) return;
   
-  const c = {
-    id: uid('c'),
+  const consultantData = {
+    id: state.editingConsultantId || uid('c'),
     name: name,
+    joinedDate: document.getElementById('consultantJoinedDate').value || todayISO(),
     certLevel: document.getElementById('consultantLevel').value,
     certified: document.getElementById('consultantCertified').checked
   };
-  state.consultants.push(c);
+
+  if (state.editingConsultantId) {
+    const idx = state.consultants.findIndex(c => c.id === state.editingConsultantId);
+    if (idx !== -1) state.consultants[idx] = consultantData;
+  } else {
+    state.consultants.push(consultantData);
+  }
+
   closeConsultantModal();
   saveData();
   renderCurrentView();
+}
+
+function deleteConsultant(id) {
+  const c = consultantById(id);
+  if (confirm(`Are you sure you want to remove ${c ? c.name : 'this consultant'}?`)) {
+    state.consultants = state.consultants.filter(x => x.id !== id);
+    saveData();
+    renderCurrentView();
+  }
 }
 
 function exportReport() { window.print(); }
