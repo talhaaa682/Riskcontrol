@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HOF Migration - Consultant QA Dashboard v2</title>
+<title>HOF Migration - Enterprise QA & Sales Performance Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -16,7 +16,7 @@ body{font-family:'Inter',sans-serif;background:#f8fafc;}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
 .modal-overlay{background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
 .glass{background:rgba(255,255,255,.8);backdrop-filter:blur(12px)}
-.chart-container{position:relative;height:200px}
+.chart-container{position:relative;height:220px}
 </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800">
@@ -27,13 +27,13 @@ body{font-family:'Inter',sans-serif;background:#f8fafc;}
       <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-200">H</div>
       <div>
         <h1 class="font-bold text-lg leading-tight text-slate-800">HOF Migration</h1>
-        <p class="text-xs text-slate-500">Consultant QA Dashboard v2</p>
+        <p class="text-xs text-slate-500">QA Audits & Consultant Performance Platform</p>
       </div>
     </div>
     <div class="hidden md:flex items-center gap-4 text-sm font-medium text-slate-600 border-l border-slate-200 pl-6">
       <a href="index.html" class="hover:text-indigo-600 transition">Sales Pipeline</a>
       <span class="text-slate-300">|</span>
-      <a href="dashboard2.html" class="text-indigo-600 font-semibold">QA Dashboard</a>
+      <a href="dashboard2.html" class="text-indigo-600 font-semibold">QA & Performance</a>
     </div>
   </div>
   <div class="flex items-center gap-3">
@@ -41,6 +41,7 @@ body{font-family:'Inter',sans-serif;background:#f8fafc;}
       <button onclick="setPeriod('today')" id="period-today" class="px-3 py-1.5 rounded-md text-xs font-medium transition bg-white shadow-sm text-indigo-700">Today</button>
       <button onclick="setPeriod('week')" id="period-week" class="px-3 py-1.5 rounded-md text-xs font-medium transition text-slate-500 hover:text-slate-700">This Week</button>
       <button onclick="setPeriod('month')" id="period-month" class="px-3 py-1.5 rounded-md text-xs font-medium transition text-slate-500 hover:text-slate-700">This Month</button>
+      <button onclick="setPeriod('all')" id="period-all" class="px-3 py-1.5 rounded-md text-xs font-medium transition text-slate-500 hover:text-slate-700">All Time</button>
     </div>
     <div id="syncStatus" class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border text-slate-500 bg-slate-50 border-slate-200">
       <span class="w-2 h-2 rounded-full bg-slate-400"></span>Connecting...
@@ -62,7 +63,7 @@ body{font-family:'Inter',sans-serif;background:#f8fafc;}
       </button>
       <button onclick="switchView('qa-checklist')" id="nav-qa-checklist" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-        Daily QA Checklist
+        QA Review Log
       </button>
       <button onclick="switchView('trends')" id="nav-trends" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
@@ -70,28 +71,24 @@ body{font-family:'Inter',sans-serif;background:#f8fafc;}
       </button>
       <button onclick="switchView('leaderboard')" id="nav-leaderboard" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
-        Leaderboard
-      </button>
-      <button onclick="switchView('product-line')" id="nav-product-line" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-        Performance by Product
+        Leaderboard & Sales
       </button>
       <button onclick="switchView('consultants')" id="nav-consultants" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        Manage Consultants
+        Consultant Lifecycle
       </button>
       <button onclick="switchView('alerts')" id="nav-alerts" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-        Alerts & Tasks
+        Alerts & Coaching
         <span id="alertBadge" class="ml-auto bg-slate-300 text-white text-xs px-2 py-0.5 rounded-full">0</span>
       </button>
     </div>
     <div class="mt-8 pt-6 border-t border-slate-200">
-      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Scoring Weights</h3>
+      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">QA Scoring Weights</h3>
       <div class="space-y-3">
-        <div><div class="flex justify-between text-xs mb-1"><span>Call Handling (CHS)</span><span class="font-medium">35%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full score-bar" style="width:35%"></div></div></div>
-        <div><div class="flex justify-between text-xs mb-1"><span>Process Adherence (PAS)</span><span class="font-medium">35%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full score-bar" style="width:35%"></div></div></div>
-        <div><div class="flex justify-between text-xs mb-1"><span>Closing Effectiveness (CES)</span><span class="font-medium">30%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full score-bar" style="width:30%"></div></div></div>
+        <div><div class="flex justify-between text-xs mb-1"><span>Call Handling & Rapport</span><span class="font-medium">35%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full score-bar" style="width:35%"></div></div></div>
+        <div><div class="flex justify-between text-xs mb-1"><span>Process Adherence</span><span class="font-medium">35%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full score-bar" style="width:35%"></div></div></div>
+        <div><div class="flex justify-between text-xs mb-1"><span>Closing Effectiveness</span><span class="font-medium">30%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full score-bar" style="width:30%"></div></div></div>
       </div>
     </div>
   </aside>
@@ -101,7 +98,6 @@ body{font-family:'Inter',sans-serif;background:#f8fafc;}
     <section id="view-qa-checklist" class="hidden"></section>
     <section id="view-trends" class="hidden"></section>
     <section id="view-leaderboard" class="hidden"></section>
-    <section id="view-product-line" class="hidden"></section>
     <section id="view-consultants" class="hidden"></section>
     <section id="view-alerts" class="hidden"></section>
   </main>
@@ -109,109 +105,123 @@ body{font-family:'Inter',sans-serif;background:#f8fafc;}
 
 <!-- QA Entry Modal -->
 <div id="entryModal" class="fixed inset-0 modal-overlay z-[60] hidden flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
     <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl z-10">
-      <h3 id="entryModalTitle" class="font-bold text-slate-800">New QA Review</h3>
+      <h3 id="entryModalTitle" class="font-bold text-slate-800">New Detailed QA Review</h3>
       <button onclick="closeEntryModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
     </div>
     <div class="p-6 space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div><label class="text-xs font-medium text-slate-500">Date</label><input id="entryDate" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+      <div class="grid grid-cols-3 gap-4">
+        <div><label class="text-xs font-medium text-slate-500">Interaction Date</label><input id="entryDate" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
         <div><label class="text-xs font-medium text-slate-500">Consultant</label><select id="entryConsultant" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></select></div>
+        <div><label class="text-xs font-medium text-slate-500">Product Stream</label><input id="entryProduct" type="text" placeholder="e.g. Canada PR / Express Entry" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
       </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div><label class="text-xs font-medium text-slate-500">Customer Name</label><input id="entryCustomer" type="text" placeholder="e.g. Kumar Family" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
-        <div><label class="text-xs font-medium text-slate-500">Product / Case Type</label><input id="entryProduct" type="text" placeholder="e.g. Canada PR" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
-      </div>
-      <div class="border-t border-slate-100 pt-4">
-        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Client Contact Info (Optional)</p>
-        <div class="grid grid-cols-2 gap-4">
-          <div><label class="text-xs font-medium text-slate-500">Client Name</label><input id="entryClientName" type="text" placeholder="e.g. Raj Kumar" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
-          <div><label class="text-xs font-medium text-slate-500">Client Number</label><input id="entryClientNumber" type="text" placeholder="Phone / File #" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+      <div class="grid grid-cols-3 gap-4">
+        <div><label class="text-xs font-medium text-slate-500">Client / Lead Name</label><input id="entryCustomer" type="text" placeholder="e.g. Ahmed Raza" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+        <div><label class="text-xs font-medium text-slate-500">Deal Closed?</label>
+          <select id="entryDealClosed" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="no">No / Pending</option>
+            <option value="yes">Yes - Deal Closed</option>
+          </select>
         </div>
-        <div class="mt-3"><label class="text-xs font-medium text-slate-500">Case Link</label><input id="entryCaseLink" type="text" placeholder="https://..." class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+        <div><label class="text-xs font-medium text-slate-500">Deal Value / Revenue ($)</label><input id="entrySalesValue" type="number" placeholder="e.g. 3500" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
       </div>
 
-      <div id="entryChecklistSections"></div>
+      <div id="entryChecklistSections" class="space-y-4"></div>
 
-      <div class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
-        <span class="text-xs font-medium text-slate-500">Composite Score</span>
-        <span id="entryCompositePreview" class="text-base font-bold text-indigo-600">0%</span>
+      <div class="flex items-center justify-between bg-slate-50 rounded-lg px-4 py-3 border border-slate-200">
+        <span class="text-xs font-medium text-slate-600">Calculated Composite Quality Score</span>
+        <span id="entryCompositePreview" class="text-lg font-bold text-indigo-600">0%</span>
       </div>
 
-      <div><label class="text-xs font-medium text-slate-500">Notes / Coaching Feedback</label><textarea id="entryNotes" rows="2" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></textarea></div>
+      <div><label class="text-xs font-medium text-slate-500">Coaching Notes & Action Plan</label><textarea id="entryNotes" rows="2" placeholder="Constructive feedback for consultant..." class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></textarea></div>
     </div>
     <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 sticky bottom-0 bg-white rounded-b-2xl">
       <button onclick="closeEntryModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
-      <button onclick="submitEntry()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Save Review</button>
+      <button onclick="submitEntry()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Save QA Audit</button>
     </div>
   </div>
 </div>
 
-<!-- Consultant Modal -->
+<!-- Consultant Lifecycle Modal -->
 <div id="consultantModal" class="fixed inset-0 modal-overlay z-[60] hidden flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md">
     <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-      <h3 id="consultantModalTitle" class="font-bold text-slate-800">Add Consultant</h3>
+      <h3 id="consultantModalTitle" class="font-bold text-slate-800">Add Consultant Profile</h3>
       <button onclick="closeConsultantModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
     </div>
     <div class="p-6 space-y-4">
       <div><label class="text-xs font-medium text-slate-500">Full Name</label><input id="consultantName" type="text" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
-      <div><label class="text-xs font-medium text-slate-500">Floor Joined Date</label><input id="consultantJoinedDate" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
-      <div><label class="text-xs font-medium text-slate-500">Role / Designation</label>
-        <select id="consultantLevel" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200">
-          <option value="Trainee">Trainee</option><option value="Consultant">Consultant</option><option value="Senior Consultant">Senior Consultant</option><option value="Team Lead">Team Lead</option>
-        </select>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs font-medium text-slate-500">Joined Floor Date</label><input id="consultantJoinedDate" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+        <div><label class="text-xs font-medium text-slate-500">Exit Date (If Any)</label><input id="consultantExitDate" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
       </div>
-      <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer pt-1">
-        <input id="consultantCertified" type="checkbox" class="rounded border-slate-300" checked> Certified
-      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs font-medium text-slate-500">Role / Title</label>
+          <select id="consultantLevel" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="Trainee">Trainee</option>
+            <option value="Consultant">Consultant</option>
+            <option value="Senior Consultant">Senior Consultant</option>
+            <option value="Team Lead">Team Lead</option>
+          </select>
+        </div>
+        <div><label class="text-xs font-medium text-slate-500">Lifecycle Status</label>
+          <select id="consultantStatus" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="Active">Active</option>
+            <option value="PIP">Low Performance (PIP)</option>
+            <option value="Resigned">Resigned</option>
+            <option value="Terminated">Terminated</option>
+          </select>
+        </div>
+      </div>
     </div>
     <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
       <button onclick="closeConsultantModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
-      <button onclick="submitConsultant()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Save</button>
+      <button onclick="submitConsultant()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Save Consultant</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ============ CONFIG ============ */
+/* ============ CONFIG & CHECKLIST DEFINITIONS ============ */
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxITw3yQKYtCBlpwWoO3HcttaZ6DirtPt1_7DEe_OBj-GFLDwXrIjhM4rufyKaSnMcU2Q/exec";
 const USE_GOOGLE_SHEETS = true;
 const WEIGHTS = { chs: 0.35, pas: 0.35, ces: 0.30 };
 const ALERT_THRESHOLD = 70;
 const AVATAR_COLORS = ['bg-indigo-100 text-indigo-700','bg-emerald-100 text-emerald-700','bg-amber-100 text-amber-700','bg-rose-100 text-rose-700','bg-sky-100 text-sky-700','bg-violet-100 text-violet-700'];
-const VIEWS = ['overview','qa-checklist','trends','leaderboard','product-line','consultants','alerts'];
+const VIEWS = ['overview','qa-checklist','trends','leaderboard','consultants','alerts'];
 
 const CHS_ITEMS = [
-  'Maintains chest register / authority voice throughout call',
-  'Pace controlled at 130-150 WPM (not rushed)',
-  'Uses silence discipline: 4+ seconds after diagnostic questions',
-  'Handles interruptions with Stop-Freeze-Volume Drop protocol',
-  'Zero upspeak incidents (statements sound like statements)',
-  'Sets clear next step / payment ask / close before ending',
-  'Active listening: paraphrases client concerns accurately',
-  'Controls call direction without being pushy'
+  'Sets clear call roadmap, agenda, and expectations early on',
+  'Demonstrates genuine empathy & validates client goals/fears',
+  'Value-first approach: helps client diagnose eligibility before selling',
+  'Maintains chest register / authority tone without upspeak',
+  'Controlled pace (130-150 WPM) with 3+ second silence discipline',
+  'Handles interruptions smoothly via Stop-Freeze-Volume Drop',
+  'Personalizes call by referencing client background & career history',
+  'Acknowledges client objections warmly before countering'
 ];
+
 const PAS_ITEMS = [
-  'Intake form 100% complete before call',
-  'NOC code validated with duty mapping present',
-  'Evidence checklist uploaded and verified in CRM',
-  'ECA ordered / proof of funds verified / NIW letters requested',
-  'All SLA deadlines met (tasks within target days)',
-  'Correct product recommendation based on client profile',
-  'Fee disclosure done at correct stage',
-  'Documentation accuracy: no errors in client data entry'
+  'Intake form 100% complete and reviewed before starting call',
+  'NOC code and job duties mapped accurately without discrepancy',
+  'Eligibility stream/pathway evaluated correctly based on rules',
+  'Document requirements (ECA, Language, Funds) explained accurately',
+  'Fee structure and government charges disclosed transparently',
+  'CRM call summary and next action items logged immediately',
+  'Risk factors, timelines, and refund terms clearly communicated',
+  'Follow-ups and SLA deadlines executed on schedule'
 ];
+
 const CES_ITEMS = [
-  'Proposal sent within 24 hours of discovery call',
-  'Follow-up calls completed on scheduled dates',
-  'Objections handled with structured rebuttal',
-  'Payment collected or payment plan confirmed',
-  'No unnecessary reprice events after discovery',
-  'Conversion from qualified lead to paid client',
-  'Time from intake to first payment within target',
-  'Upsell / cross-sell attempted where appropriate'
+  'Bridges client personal pain points directly to service benefits',
+  'Stacks service value completely before presenting price',
+  'Handles price/timing objections using structured framework',
+  'Creates genuine urgency based on age, points, or visa quotas',
+  'Asks directly and confidently for deposit or payment commitment',
+  'Offers structured payment plans when legitimate constraints exist',
+  'Sends formal proposal or agreement within 2 hours of call',
+  'Secures paid client commitment or hard-scheduled follow-up'
 ];
 
 /* ============ STATE ============ */
@@ -219,7 +229,7 @@ let state = {
   period: 'today',
   currentView: 'overview',
   consultants: [
-    { id: 'c1', name: 'Aiman', joinedDate: '2026-05-01', certLevel: 'Trainee', certified: true }
+    { id: 'c1', name: 'Aiman', joinedDate: '2026-05-01', exitDate: '', certLevel: 'Consultant', status: 'Active' }
   ],
   entries: [],
   editingEntryId: null,
@@ -242,38 +252,28 @@ function updateSyncStatus(text, color) {
 
 async function saveData() {
   updateSyncStatus('Syncing...', 'amber');
-  
-  localStorage.setItem('hof_qa_state_v2', JSON.stringify({
-    consultants: state.consultants,
-    entries: state.entries
-  }));
+  localStorage.setItem('hof_qa_state_v3', JSON.stringify({ consultants: state.consultants, entries: state.entries }));
 
   if (!USE_GOOGLE_SHEETS || !GOOGLE_SCRIPT_URL) {
     updateSyncStatus('Saved locally', 'emerald');
     return;
   }
-
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        consultants: state.consultants,
-        entries: state.entries
-      })
+      body: JSON.stringify({ consultants: state.consultants, entries: state.entries })
     });
     updateSyncStatus('Synced Cloud', 'emerald');
   } catch (err) {
-    console.error('Cloud save error:', err);
     updateSyncStatus('Saved locally (Offline)', 'amber');
   }
 }
 
 async function loadData() {
   updateSyncStatus('Loading...', 'amber');
-  
-  const local = localStorage.getItem('hof_qa_state_v2');
+  const local = localStorage.getItem('hof_qa_state_v3');
   if (local) {
     try {
       const parsed = JSON.parse(local);
@@ -294,14 +294,12 @@ async function loadData() {
     if (data && (data.consultants || data.entries)) {
       state.consultants = data.consultants || state.consultants;
       state.entries = data.entries || state.entries;
-      localStorage.setItem('hof_qa_state_v2', JSON.stringify(data));
+      localStorage.setItem('hof_qa_state_v3', JSON.stringify(data));
     }
     updateSyncStatus('Cloud Synced', 'emerald');
   } catch (err) {
-    console.warn('Unable to pull cloud data, using local fallback:', err);
     updateSyncStatus('Local Mode', 'amber');
   }
-  
   renderCurrentView();
 }
 
@@ -313,13 +311,6 @@ function chsScore(e){ return pct(e.chsChecks, CHS_ITEMS.length); }
 function pasScore(e){ return pct(e.pasChecks, PAS_ITEMS.length); }
 function cesScore(e){ return pct(e.cesChecks, CES_ITEMS.length); }
 function composite(e){ return Math.round(chsScore(e)*WEIGHTS.chs + pasScore(e)*WEIGHTS.pas + cesScore(e)*WEIGHTS.ces); }
-function unmetItems(e){
-  const out = [];
-  CHS_ITEMS.forEach((label,i)=>{ if(!(e.chsChecks && e.chsChecks[i])) out.push(label); });
-  PAS_ITEMS.forEach((label,i)=>{ if(!(e.pasChecks && e.pasChecks[i])) out.push(label); });
-  CES_ITEMS.forEach((label,i)=>{ if(!(e.cesChecks && e.cesChecks[i])) out.push(label); });
-  return out;
-}
 function initials(name){ return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
 function colorFor(id){ let h=0; for(const ch of String(id)) h=(h*31+ch.charCodeAt(0))>>>0; return AVATAR_COLORS[h % AVATAR_COLORS.length]; }
 function consultantById(id){ return state.consultants.find(c=>c.id===id); }
@@ -327,41 +318,43 @@ function scoreColor(v){ return v>=90?'text-emerald-600':v>=75?'text-amber-600':'
 function fmtDate(iso){ if(!iso) return ''; const d = new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function avg(arr){ return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
-function groupByConsultant(entries){ return entries.reduce((acc,e)=>{ (acc[e.consultantId]=acc[e.consultantId]||[]).push(e); return acc; },{}); }
-function groupByProduct(entries){ return entries.reduce((acc,e)=>{ const k=e.product||'Unspecified'; (acc[k]=acc[k]||[]).push(e); return acc; },{}); }
 
-/* ============ TENURE CALCULATIONS ============ */
-function calculateTenure(joinedDateISO) {
-  if (!joinedDateISO) return { days: 0, months: 0, level: 'Non-Tenured 1', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200', text: 'New' };
+/* ============ TENURE & STATUS LOGIC ============ */
+function calculateTenure(c) {
+  if (!c || !c.joinedDate) return { tenureText: 'New', level: 'Non-Tenured 1', badgeColor: 'bg-slate-100 text-slate-700 border-slate-200' };
   
-  const start = new Date(joinedDateISO + 'T00:00:00');
-  const now = new Date();
-  const diffTime = Math.max(0, now - start);
-  const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const start = new Date(c.joinedDate + 'T00:00:00');
+  const end = (c.exitDate) ? new Date(c.exitDate + 'T00:00:00') : new Date();
+  const days = Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)));
   const months = (days / 30.4375).toFixed(1);
 
   let level = 'Non-Tenured 1';
-  let badgeColor = 'bg-rose-100 text-rose-800 border-rose-200';
-  let text = `${days}d on floor`;
+  let badgeColor = 'bg-slate-100 text-slate-800 border-slate-200';
 
-  if (days >= 60) { // More than 2 months (approx 60+ days)
+  if (days >= 90) {
     level = 'Tenured';
     badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    text = `${months}m on floor`;
-  } else if (days >= 30) { // Up to 2 months (30-60 days)
+  } else if (days >= 30) {
     level = 'Non-Tenured 2';
     badgeColor = 'bg-amber-100 text-amber-800 border-amber-200';
-    text = `${months}m on floor`;
-  } else { // Under 1 month (< 30 days)
-    level = 'Non-Tenured 1';
-    badgeColor = 'bg-slate-100 text-slate-800 border-slate-200';
-    text = `${days}d on floor`;
   }
 
-  return { days, months, level, badgeColor, text };
+  const tenureText = c.exitDate ? `Served ${months}m` : `${months}m on floor`;
+  return { days, months, level, badgeColor, tenureText };
+}
+
+function statusBadgeHtml(status) {
+  const map = {
+    'Active': '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold border border-emerald-200">Active</span>',
+    'PIP': '<span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-semibold border border-purple-200">PIP / Low Perf</span>',
+    'Resigned': '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold border border-amber-200">Resigned</span>',
+    'Terminated': '<span class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-semibold border border-red-200">Terminated</span>'
+  };
+  return map[status] || map['Active'];
 }
 
 function inPeriod(iso, period){
+  if(period==='all') return true;
   const d = new Date(iso+'T00:00:00');
   const now = new Date(); now.setHours(0,0,0,0);
   if(period==='today') return iso === todayISO();
@@ -375,7 +368,7 @@ function inPeriod(iso, period){
   return true;
 }
 function periodEntries(){ return state.entries.filter(e=>inPeriod(e.date, state.period)); }
-function periodLabel(){ return state.period==='today'?'Today':state.period==='week'?'This Week':'This Month'; }
+function periodLabel(){ return state.period==='today'?'Today':state.period==='week'?'This Week':state.period==='month'?'This Month':'All Time'; }
 
 /* ============ RENDER VIEWS ============ */
 function switchView(view){
@@ -400,7 +393,6 @@ function renderCurrentView(){
   else if (state.currentView === 'qa-checklist') renderQAChecklist();
   else if (state.currentView === 'trends') renderTrends();
   else if (state.currentView === 'leaderboard') renderLeaderboard();
-  else if (state.currentView === 'product-line') renderProductLine();
   else if (state.currentView === 'consultants') renderConsultants();
   else if (state.currentView === 'alerts') renderAlerts();
   
@@ -420,17 +412,20 @@ function emptyState(title, subtitle){
 function entryRow(e){
   const c = consultantById(e.consultantId);
   const comp = composite(e);
-  const tenure = calculateTenure(c?.joinedDate);
+  const tenure = calculateTenure(c);
+  const dealBadge = e.dealClosed === 'yes' ? `<span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Closed $${e.salesValue||0}</span>` : `<span class="text-[10px] text-slate-400">No Deal</span>`;
+
   return `<div class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition group">
     <div class="w-9 h-9 rounded-full ${c?colorFor(c.id):'bg-slate-100'} flex items-center justify-center text-sm font-bold shrink-0">${c?initials(c.name):'?'}</div>
-    <div class="min-w-[150px]">
+    <div class="min-w-[170px]">
       <p class="text-sm font-semibold text-slate-800 flex items-center gap-1.5">${esc(c?c.name:'Unknown')}</p>
-      <div class="flex items-center gap-1 mt-0.5">
-        <span class="text-[10px] px-1.5 py-0.2 rounded border ${tenure.badgeColor}">${tenure.level}</span>
+      <div class="flex items-center gap-1.5 mt-0.5">
+        ${statusBadgeHtml(c?.status || 'Active')}
         <span class="text-xs text-slate-400">&bull; ${esc(e.date)}</span>
       </div>
     </div>
-    <div class="min-w-[160px]"><p class="text-xs text-slate-400">Customer</p><p class="text-sm font-medium text-slate-700">${esc(e.customerName)||'&mdash;'}</p><p class="text-xs text-slate-400">${esc(e.product)}</p></div>
+    <div class="min-w-[160px]"><p class="text-xs text-slate-400">Client / Stream</p><p class="text-sm font-medium text-slate-700">${esc(e.customerName)||'&mdash;'}</p><p class="text-xs text-slate-400">${esc(e.product)}</p></div>
+    <div class="min-w-[100px] text-center">${dealBadge}</div>
     <div class="flex items-center gap-3 shrink-0 ml-auto">
       <div class="text-center w-10"><p class="text-[10px] text-slate-400">CHS</p><p class="text-xs font-bold ${scoreColor(chsScore(e))}">${chsScore(e)}%</p></div>
       <div class="text-center w-10"><p class="text-[10px] text-slate-400">PAS</p><p class="text-xs font-bold ${scoreColor(pasScore(e))}">${pasScore(e)}%</p></div>
@@ -449,16 +444,19 @@ function renderOverview(){
   const avgCHS = Math.round(avg(pEntries.map(chsScore)));
   const avgPAS = Math.round(avg(pEntries.map(pasScore)));
   const avgComp = Math.round(avg(pEntries.map(composite)));
+  const totalSales = pEntries.reduce((sum, e) => sum + Number(e.salesValue || 0), 0);
+  const closedDeals = pEntries.filter(e => e.dealClosed === 'yes').length;
   
   let html = `<div class="space-y-6">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">Reviews Logged</p><p class="text-2xl font-bold text-slate-800">${pEntries.length}</p></div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">Call Handling</p><p class="text-2xl font-bold text-blue-600">${avgCHS}%</p></div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">Process Adherence</p><p class="text-2xl font-bold text-emerald-600">${avgPAS}%</p></div>
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">Overall Quality</p><p class="text-2xl font-bold ${scoreColor(avgComp)}">${avgComp}%</p></div>
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">QA Audits</p><p class="text-2xl font-bold text-slate-800">${pEntries.length}</p></div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">Call & Rapport</p><p class="text-2xl font-bold text-blue-600">${avgCHS}%</p></div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">Process Score</p><p class="text-2xl font-bold text-emerald-600">${avgPAS}%</p></div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">Closed Deals</p><p class="text-2xl font-bold text-indigo-600">${closedDeals}</p></div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-medium text-slate-400 uppercase">Revenue Tracked</p><p class="text-2xl font-bold text-emerald-700">$${totalSales.toLocaleString()}</p></div>
     </div>
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center"><h2 class="font-bold text-slate-800">Recent Audits</h2>
+      <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center"><h2 class="font-bold text-slate-800">Recent Quality & Sales Audits</h2>
       <button onclick="openEntryModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium">+ New Review</button></div>
       <div class="divide-y divide-slate-100">`;
 
@@ -486,7 +484,7 @@ function renderQAChecklist() {
 function renderTrends() {
   const pEntries = periodEntries();
   document.getElementById('view-trends').innerHTML = `<div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-    <h2 class="font-bold text-slate-800 mb-4">Quality Performance Trends</h2>
+    <h2 class="font-bold text-slate-800 mb-4">Quality & Closing Trends</h2>
     <div class="chart-container"><canvas id="trendsChart"></canvas></div></div>`;
   
   if (charts['trendsChart']) charts['trendsChart'].destroy();
@@ -499,92 +497,92 @@ function renderTrends() {
     type: 'line',
     data: {
       labels: dates.length ? dates.map(fmtDate) : ['No Data'],
-      datasets: [{ label: 'Composite Score', data: dates.map(d=>Math.round(avg(byDate[d]))), borderColor: '#4f46e5', fill: false }]
+      datasets: [{ label: 'Average QA Score', data: dates.map(d=>Math.round(avg(byDate[d]))), borderColor: '#4f46e5', fill: false }]
     },
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
   });
 }
 
 function renderLeaderboard() {
-  const grouped = groupByConsultant(periodEntries());
+  const pEntries = periodEntries();
+  const grouped = pEntries.reduce((acc,e)=>{ (acc[e.consultantId]=acc[e.consultantId]||[]).push(e); return acc; },{});
+  
   const rankings = Object.keys(grouped).map(cid => {
     const c = consultantById(cid);
     const items = grouped[cid];
-    return { consultant: c, avgScore: Math.round(avg(items.map(composite))), count: items.length };
+    const totalSales = items.reduce((s, x) => s + Number(x.salesValue || 0), 0);
+    const deals = items.filter(x => x.dealClosed === 'yes').length;
+    return { consultant: c, avgScore: Math.round(avg(items.map(composite))), count: items.length, totalSales, deals };
   }).sort((a,b) => b.avgScore - a.avgScore);
 
-  let html = `<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4"><h2 class="font-bold text-slate-800">Consultant Leaderboard</h2><div class="space-y-3">`;
+  let html = `<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4"><h2 class="font-bold text-slate-800">Consultant Leaderboard & Sales Performance (${periodLabel()})</h2><div class="space-y-3">`;
 
   if(!rankings.length) {
-    html += emptyState('No data available', 'Complete reviews to rank consultants.');
+    html += emptyState('No data available', 'Complete QA reviews to generate leaderboard.');
   } else {
     rankings.forEach((r, idx) => {
-      const tenure = calculateTenure(r.consultant?.joinedDate);
-      html += `<div class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50">
+      const tenure = calculateTenure(r.consultant);
+      html += `<div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 hover:bg-slate-50">
         <div class="flex items-center gap-3"><span class="font-bold text-slate-400 w-4">#${idx+1}</span>
-        <div class="w-8 h-8 rounded-full ${r.consultant?colorFor(r.consultant.id):'bg-slate-100'} flex items-center justify-center font-bold text-xs">${r.consultant?initials(r.consultant.name):'?'}</div>
+        <div class="w-10 h-10 rounded-full ${r.consultant?colorFor(r.consultant.id):'bg-slate-100'} flex items-center justify-center font-bold text-xs">${r.consultant?initials(r.consultant.name):'?'}</div>
         <div>
           <p class="font-semibold text-slate-800 text-sm flex items-center gap-2">
             ${esc(r.consultant?r.consultant.name:'Unknown')}
+            ${statusBadgeHtml(r.consultant?.status || 'Active')}
             <span class="text-[10px] px-1.5 py-0.2 rounded border ${tenure.badgeColor}">${tenure.level}</span>
           </p>
-          <p class="text-xs text-slate-400">${r.count} Audits &bull; ${tenure.text}</p>
+          <p class="text-xs text-slate-400">${r.count} Audits &bull; ${tenure.tenureText}</p>
         </div></div>
-        <span class="font-bold text-base ${scoreColor(r.avgScore)}">${r.avgScore}%</span></div>`;
+        <div class="flex items-center gap-6">
+          <div class="text-right"><p class="text-xs text-slate-400">Deals / Revenue</p><p class="text-sm font-bold text-slate-800">${r.deals} deals ($${r.totalSales.toLocaleString()})</p></div>
+          <div class="text-right"><p class="text-xs text-slate-400">QA Score</p><p class="text-base font-bold ${scoreColor(r.avgScore)}">${r.avgScore}%</p></div>
+        </div></div>`;
     });
   }
   html += '</div></div>';
   document.getElementById('view-leaderboard').innerHTML = html;
 }
 
-function renderProductLine() {
-  const grouped = groupByProduct(periodEntries());
-  let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
-  
-  if(!Object.keys(grouped).length) {
-    html = emptyState('No product data available', 'Log reviews with product names.');
-  } else {
-    Object.keys(grouped).forEach(pName => {
-      const pList = grouped[pName];
-      const pAvg = Math.round(avg(pList.map(composite)));
-      html += `<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-        <h3 class="font-bold text-slate-800">${esc(pName)}</h3>
-        <p class="text-xs text-slate-400 mb-3">${pList.length} Total Reviews</p>
-        <div class="flex justify-between items-center"><span class="text-sm font-medium text-slate-500">Average Score</span>
-        <span class="text-lg font-bold ${scoreColor(pAvg)}">${pAvg}%</span></div></div>`;
-    });
-  }
-  html += '</div>';
-  document.getElementById('view-product-line').innerHTML = html;
-}
-
 function renderConsultants() {
   let html = `<div class="space-y-4">
-    <div class="flex justify-between items-center"><h2 class="font-bold text-slate-800">Team Roster & Tenures</h2>
+    <div class="flex justify-between items-center"><h2 class="font-bold text-slate-800">Consultant Lifecycle & Data Maintenance</h2>
     <button onclick="openConsultantModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium">+ Add Consultant</button></div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
 
   if(!state.consultants.length) {
-    html += emptyState('No consultants found', 'Click "+ Add Consultant" to add team members.');
+    html += emptyState('No consultants found', 'Click "+ Add Consultant" to maintain roster.');
   } else {
     state.consultants.forEach(c => {
-      const tenure = calculateTenure(c.joinedDate);
-      html += `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between relative group">
-        <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-full ${colorFor(c.id)} flex items-center justify-center font-bold text-sm shrink-0">${initials(c.name)}</div>
-          <div>
-            <p class="font-bold text-slate-800 text-sm">${esc(c.name)}</p>
-            <p class="text-xs text-slate-400">${esc(c.certLevel || 'Consultant')}</p>
-            <div class="mt-2 flex flex-wrap items-center gap-1.5">
-              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tenure.badgeColor}">${tenure.level}</span>
-              <span class="text-xs text-slate-500">${tenure.text}</span>
+      const tenure = calculateTenure(c);
+      const cEntries = state.entries.filter(e => e.consultantId === c.id);
+      const totalRev = cEntries.reduce((sum, e) => sum + Number(e.salesValue || 0), 0);
+      const totalDeals = cEntries.filter(e => e.dealClosed === 'yes').length;
+
+      html += `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between relative group">
+        <div>
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full ${colorFor(c.id)} flex items-center justify-center font-bold text-sm shrink-0">${initials(c.name)}</div>
+              <div>
+                <p class="font-bold text-slate-800 text-sm">${esc(c.name)}</p>
+                <p class="text-xs text-slate-400">${esc(c.certLevel || 'Consultant')}</p>
+              </div>
             </div>
-            ${c.joinedDate ? `<p class="text-[10px] text-slate-400 mt-1">Joined: ${esc(c.joinedDate)}</p>` : ''}
+            <div class="flex items-center gap-1">
+              <button onclick="openConsultantModal('${c.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+              <button onclick="deleteConsultant('${c.id}')" class="p-1 text-slate-400 hover:text-red-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+            <div><span class="text-slate-400">Status:</span> ${statusBadgeHtml(c.status)}</div>
+            <div><span class="text-slate-400">Tenure:</span> <span class="font-semibold text-slate-700">${tenure.tenureText}</span></div>
+            <div><span class="text-slate-400">Joined:</span> ${esc(c.joinedDate || 'N/A')}</div>
+            <div><span class="text-slate-400">Exited:</span> ${esc(c.exitDate || 'Active')}</div>
           </div>
         </div>
-        <div class="flex items-center gap-1">
-          <button onclick="openConsultantModal('${c.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-          <button onclick="deleteConsultant('${c.id}')" class="p-1 text-slate-400 hover:text-red-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+        <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs bg-slate-50 p-2 rounded-lg">
+          <span class="text-slate-500">Deals: <strong>${totalDeals}</strong></span>
+          <span class="text-slate-500">Sales: <strong>$${totalRev.toLocaleString()}</strong></span>
         </div>
       </div>`;
     });
@@ -596,16 +594,16 @@ function renderConsultants() {
 
 function renderAlerts() {
   const lowScores = state.entries.filter(e => composite(e) < ALERT_THRESHOLD);
-  let html = `<div class="space-y-4"><h2 class="font-bold text-slate-800">Flagged Risk Audits (&lt; ${ALERT_THRESHOLD}%)</h2>`;
+  let html = `<div class="space-y-4"><h2 class="font-bold text-slate-800">Flagged Audits (&lt; ${ALERT_THRESHOLD}%)</h2>`;
   
   if(!lowScores.length) {
-    html += emptyState('No active alerts', 'All audits currently pass minimum QA thresholds.');
+    html += emptyState('No low-performing audits', 'All evaluated calls pass QA standards.');
   } else {
     lowScores.forEach(e => {
       html += `<div class="bg-red-50 border border-red-200 p-4 rounded-xl flex items-center justify-between">
         <div><p class="font-bold text-red-800 text-sm">${esc(consultantById(e.consultantId)?.name || 'Unknown')} — Score: ${composite(e)}%</p>
-        <p class="text-xs text-red-600 mt-1">Unmet items: ${unmetItems(e).length} failed criteria.</p></div>
-        <button onclick="openEntryModal('${e.id}')" class="bg-white border border-red-200 text-red-700 px-3 py-1.5 rounded-lg text-xs font-semibold">Inspect</button></div>`;
+        <p class="text-xs text-red-600 mt-1">Client: ${esc(e.customerName)} &bull; Stream: ${esc(e.product)}</p></div>
+        <button onclick="openEntryModal('${e.id}')" class="bg-white border border-red-200 text-red-700 px-3 py-1.5 rounded-lg text-xs font-semibold">Review Audit</button></div>`;
     });
   }
   html += '</div>';
@@ -620,10 +618,10 @@ function updateAlertBadge(){
   badge.className = 'ml-auto text-xs px-2 py-0.5 rounded-full ' + (count > 0 ? 'bg-red-500 text-white' : 'bg-slate-300 text-white');
 }
 
-/* ============ MODAL & INTERACTION HANDLERS ============ */
+/* ============ MODAL HANDLERS ============ */
 function setPeriod(p) {
   state.period = p;
-  ['today','week','month'].forEach(id => {
+  ['today','week','month','all'].forEach(id => {
     const btn = document.getElementById('period-' + id);
     if(btn) btn.className = id === p ? "px-3 py-1.5 rounded-md text-xs font-medium transition bg-white shadow-sm text-indigo-700" : "px-3 py-1.5 rounded-md text-xs font-medium transition text-slate-500 hover:text-slate-700";
   });
@@ -631,13 +629,13 @@ function setPeriod(p) {
 }
 
 function checklistSectionHtml(catKey, title, items, dotColor){
-  return `<div class="border-t border-slate-100 pt-3">
-    <div class="flex items-center justify-between mb-1">
-      <p class="text-xs font-semibold text-slate-600 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full ${dotColor}"></span>${esc(title)}</p>
-      <span id="pct-${catKey}" class="text-xs font-bold text-slate-500">0%</span>
+  return `<div class="border border-slate-100 rounded-xl p-3 bg-slate-50/50">
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full ${dotColor}"></span>${esc(title)}</p>
+      <span id="pct-${catKey}" class="text-xs font-bold text-slate-600">0%</span>
     </div>
-    <div class="space-y-0.5 max-h-36 overflow-y-auto pr-1">
-      ${items.map((label,i) => `<label class="flex items-start gap-2 py-1 text-xs text-slate-600 hover:bg-slate-50 rounded px-1 cursor-pointer"><input type="checkbox" class="mt-0.5" data-cat="${catKey}" data-idx="${i}" onchange="updateCompositePreview()"> <span>${esc(label)}</span></label>`).join('')}
+    <div class="space-y-1 max-h-48 overflow-y-auto pr-1">
+      ${items.map((label,i) => `<label class="flex items-start gap-2 py-1 text-xs text-slate-600 hover:bg-white rounded px-1.5 cursor-pointer border border-transparent hover:border-slate-100"><input type="checkbox" class="mt-0.5 rounded text-indigo-600" data-cat="${catKey}" data-idx="${i}" onchange="updateCompositePreview()"> <span>${esc(label)}</span></label>`).join('')}
     </div>
   </div>`;
 }
@@ -645,12 +643,12 @@ function checklistSectionHtml(catKey, title, items, dotColor){
 function openEntryModal(entryId = null) {
   state.editingEntryId = entryId;
   const select = document.getElementById('entryConsultant');
-  select.innerHTML = state.consultants.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  select.innerHTML = state.consultants.map(c => `<option value="${c.id}">${esc(c.name)} (${c.status})</option>`).join('');
 
   document.getElementById('entryChecklistSections').innerHTML = 
-    checklistSectionHtml('chs', 'Call Handling (CHS - 35%)', CHS_ITEMS, 'bg-blue-500') +
-    checklistSectionHtml('pas', 'Process Adherence (PAS - 35%)', PAS_ITEMS, 'bg-emerald-500') +
-    checklistSectionHtml('ces', 'Closing Effectiveness (CES - 30%)', CES_ITEMS, 'bg-amber-500');
+    checklistSectionHtml('chs', 'I. Call Handling, Roadmap & Rapport (35%)', CHS_ITEMS, 'bg-blue-500') +
+    checklistSectionHtml('pas', 'II. Process Adherence & Compliance (35%)', PAS_ITEMS, 'bg-emerald-500') +
+    checklistSectionHtml('ces', 'III. Closing Effectiveness & Pitch (30%)', CES_ITEMS, 'bg-amber-500');
 
   if(entryId) {
     const e = state.entries.find(x => x.id === entryId);
@@ -659,9 +657,8 @@ function openEntryModal(entryId = null) {
       select.value = e.consultantId;
       document.getElementById('entryCustomer').value = e.customerName || '';
       document.getElementById('entryProduct').value = e.product || '';
-      document.getElementById('entryClientName').value = e.clientName || '';
-      document.getElementById('entryClientNumber').value = e.clientNumber || '';
-      document.getElementById('entryCaseLink').value = e.caseLink || '';
+      document.getElementById('entryDealClosed').value = e.dealClosed || 'no';
+      document.getElementById('entrySalesValue').value = e.salesValue || '';
       document.getElementById('entryNotes').value = e.notes || '';
       
       ['chs','pas','ces'].forEach(cat => {
@@ -673,9 +670,8 @@ function openEntryModal(entryId = null) {
     document.getElementById('entryDate').value = todayISO();
     document.getElementById('entryCustomer').value = '';
     document.getElementById('entryProduct').value = '';
-    document.getElementById('entryClientName').value = '';
-    document.getElementById('entryClientNumber').value = '';
-    document.getElementById('entryCaseLink').value = '';
+    document.getElementById('entryDealClosed').value = 'no';
+    document.getElementById('entrySalesValue').value = '';
     document.getElementById('entryNotes').value = '';
   }
 
@@ -708,9 +704,8 @@ function submitEntry() {
     consultantId: document.getElementById('entryConsultant').value,
     customerName: document.getElementById('entryCustomer').value,
     product: document.getElementById('entryProduct').value,
-    clientName: document.getElementById('entryClientName').value,
-    clientNumber: document.getElementById('entryClientNumber').value,
-    caseLink: document.getElementById('entryCaseLink').value,
+    dealClosed: document.getElementById('entryDealClosed').value,
+    salesValue: document.getElementById('entrySalesValue').value || 0,
     chsChecks: getChecks('chs'),
     pasChecks: getChecks('pas'),
     cesChecks: getChecks('ces'),
@@ -735,7 +730,7 @@ function deleteEntry(id) {
   renderCurrentView();
 }
 
-/* ============ CONSULTANT HANDLERS ============ */
+/* ============ CONSULTANT LIFECYCLE HANDLERS ============ */
 function openConsultantModal(consultantId = null) {
   state.editingConsultantId = consultantId;
   const title = document.getElementById('consultantModalTitle');
@@ -743,18 +738,20 @@ function openConsultantModal(consultantId = null) {
   if (consultantId) {
     const c = state.consultants.find(x => x.id === consultantId);
     if (c) {
-      title.textContent = "Edit Consultant";
+      title.textContent = "Edit Consultant Profile";
       document.getElementById('consultantName').value = c.name || '';
       document.getElementById('consultantJoinedDate').value = c.joinedDate || todayISO();
+      document.getElementById('consultantExitDate').value = c.exitDate || '';
       document.getElementById('consultantLevel').value = c.certLevel || 'Consultant';
-      document.getElementById('consultantCertified').checked = !!c.certified;
+      document.getElementById('consultantStatus').value = c.status || 'Active';
     }
   } else {
-    title.textContent = "Add Consultant";
+    title.textContent = "Add Consultant Profile";
     document.getElementById('consultantName').value = '';
     document.getElementById('consultantJoinedDate').value = todayISO();
+    document.getElementById('consultantExitDate').value = '';
     document.getElementById('consultantLevel').value = 'Consultant';
-    document.getElementById('consultantCertified').checked = true;
+    document.getElementById('consultantStatus').value = 'Active';
   }
   
   document.getElementById('consultantModal').classList.remove('hidden');
@@ -773,8 +770,9 @@ function submitConsultant() {
     id: state.editingConsultantId || uid('c'),
     name: name,
     joinedDate: document.getElementById('consultantJoinedDate').value || todayISO(),
+    exitDate: document.getElementById('consultantExitDate').value || '',
     certLevel: document.getElementById('consultantLevel').value,
-    certified: document.getElementById('consultantCertified').checked
+    status: document.getElementById('consultantStatus').value
   };
 
   if (state.editingConsultantId) {
@@ -791,7 +789,7 @@ function submitConsultant() {
 
 function deleteConsultant(id) {
   const c = consultantById(id);
-  if (confirm(`Are you sure you want to remove ${c ? c.name : 'this consultant'}?`)) {
+  if (confirm(`Remove consultant "${c ? c.name : ''}"? Historical QA data will remain.`)) {
     state.consultants = state.consultants.filter(x => x.id !== id);
     saveData();
     renderCurrentView();
