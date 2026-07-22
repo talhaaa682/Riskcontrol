@@ -3,395 +3,1005 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HOF Sales Pipeline</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>HOF Migration - Consultant QA Dashboard v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  :root{
-    --bg:#0A0C10; --panel:#12161D; --panel-2:#171C25; --border:#232935;
-    --text:#E8EAED; --text-dim:#7C8494; --amber:#F2A93B; --green:#34D399; --red:#F2555A;
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{
-    background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
-    min-height:100vh; padding:32px 20px 60px; line-height:1.4;
-  }
-  .board{ max-width:1180px; margin:0 auto; }
-  .mono{ font-family:'Space Mono',monospace; }
-
-  /* ---- Header ---- */
-  header{
-    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;
-    border-bottom:2px solid var(--border); padding-bottom:20px; margin-bottom:28px;
-  }
-  header h1{
-    font-family:'Space Mono',monospace; font-weight:700; font-size:clamp(22px,4vw,34px);
-    letter-spacing:2px; text-transform:uppercase;
-  }
-  header .sub{ color:var(--text-dim); font-size:13px; margin-top:6px; letter-spacing:0.5px; }
-  .status{ display:flex; align-items:center; gap:20px; }
-  .status .dot-row{ display:flex; align-items:center; gap:8px; font-family:'Space Mono',monospace; font-size:12px; letter-spacing:1px; }
-  .dot{ width:8px; height:8px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
-  .dot.live{ background:var(--green); box-shadow:0 0 8px var(--green); }
-  .dot.demo{ background:var(--amber); box-shadow:0 0 8px var(--amber); }
-  #clock{ font-family:'Space Mono',monospace; font-size:13px; color:var(--text-dim); }
-  #refreshBtn{
-    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
-    font-family:'Space Mono',monospace; font-size:12px; letter-spacing:1px;
-    padding:8px 14px; border-radius:4px; cursor:pointer; text-transform:uppercase;
-  }
-  #refreshBtn:hover{ border-color:var(--amber); color:var(--amber); }
-  #refreshBtn:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
-
-  section{ margin-bottom:36px; }
-  .section-label{
-    font-family:'Space Mono',monospace; font-size:12px; letter-spacing:3px; color:var(--text-dim);
-    text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; gap:10px;
-  }
-  .section-label::after{ content:""; flex:1; height:1px; background:var(--border); }
-
-  /* ---- Funnel (departure gates) ---- */
-  .funnel{ display:flex; gap:0; overflow-x:auto; padding-bottom:8px; }
-  .gate{
-    flex:1; min-width:150px; background:var(--panel); border:1px solid var(--border);
-    padding:16px 14px; position:relative;
-  }
-  .gate + .gate{ border-left:none; }
-  .gate .gate-no{ font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim); letter-spacing:1px; }
-  .gate .gate-label{ font-size:11px; font-weight:600; letter-spacing:0.5px; margin:6px 0 2px; min-height:28px; }
-  .gate .gate-sub{ font-size:10px; color:var(--text-dim); margin-bottom:14px; }
-  .gate .gate-count{ font-family:'Space Mono',monospace; font-weight:700; font-size:30px; color:var(--amber); }
-  .gate .gate-conv{ font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim); margin-top:4px; }
-  .gate.won .gate-count{ color:var(--green); }
-  .gate.gap{ background:repeating-linear-gradient(135deg, var(--panel), var(--panel) 8px, var(--panel-2) 8px, var(--panel-2) 16px); }
-  .gate.gap .gate-count{ color:var(--text-dim); font-size:16px; }
-  .gate-arrow{
-    display:flex; align-items:center; justify-content:center; width:22px; color:var(--border);
-    font-size:16px; background:var(--bg); z-index:1;
-  }
-  .lost-strip{
-    display:flex; justify-content:space-between; align-items:center; margin-top:2px;
-    background:var(--panel-2); border:1px solid var(--border); border-top:2px solid var(--red);
-    padding:10px 16px; font-family:'Space Mono',monospace; font-size:12px; color:var(--text-dim);
-  }
-  .lost-strip b{ color:var(--red); font-size:15px; }
-
-  /* ---- Program cards ---- */
-  .programs{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
-  .program-card{ background:var(--panel); border:1px solid var(--border); padding:18px; }
-  .program-card .p-name{ font-weight:600; font-size:14px; margin-bottom:2px; }
-  .program-card .p-tag{ font-family:'Space Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
-  .program-card .p-total{ font-family:'Space Mono',monospace; font-size:26px; font-weight:700; margin:14px 0 10px; }
-  .p-bar{ height:6px; background:var(--panel-2); border-radius:3px; overflow:hidden; display:flex; margin-bottom:10px; }
-  .p-bar span{ height:100%; }
-  .p-bar .won{ background:var(--green); }
-  .p-bar .lost{ background:var(--red); }
-  .p-bar .open{ background:var(--amber); }
-  .p-stats{ display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:11px; color:var(--text-dim); }
-  .p-stats b{ color:var(--text); }
-
-  /* ---- Roster table ---- */
-  table{ width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--border); }
-  th{
-    text-align:left; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:1px;
-    text-transform:uppercase; color:var(--text-dim); padding:12px 14px; border-bottom:1px solid var(--border);
-    background:var(--panel-2);
-  }
-  td{ padding:12px 14px; border-bottom:1px solid var(--border); font-size:13px; }
-  tr:last-child td{ border-bottom:none; }
-  td.num{ font-family:'Space Mono',monospace; text-align:right; }
-  .win-rate{ font-family:'Space Mono',monospace; font-weight:700; }
-  .win-rate.high{ color:var(--green); } .win-rate.mid{ color:var(--amber); } .win-rate.low{ color:var(--red); }
-  .stuck-tag{
-    font-family:'Space Mono',monospace; font-size:10px; background:var(--panel-2); border:1px solid var(--border);
-    padding:3px 8px; border-radius:3px; color:var(--text-dim);
-  }
-
-  footer{
-    margin-top:40px; padding-top:20px; border-top:1px solid var(--border);
-    font-size:12px; color:var(--text-dim); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
-  }
-  footer a{ color:var(--amber); text-decoration:none; }
-
-  @media (max-width:760px){
-    .funnel{ flex-direction:column; }
-    .gate + .gate{ border-left:1px solid var(--border); border-top:none; }
-    .gate-arrow{ display:none; }
-    header{ flex-direction:column; align-items:flex-start; }
-    td, th{ padding:10px 8px; font-size:12px; }
-  }
-  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+body{font-family:'Inter',sans-serif;background:#f8fafc;}
+.score-bar{transition:width .6s cubic-bezier(.4,0,.2,1)}
+.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#f1f5f9}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+.modal-overlay{background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+.glass{background:rgba(255,255,255,.8);backdrop-filter:blur(12px)}
+.chart-container{position:relative;height:200px}
+.podium-1{background:linear-gradient(135deg,#FFD700 0%,#FFA500 100%)}
+.podium-2{background:linear-gradient(135deg,#C0C0C0 0%,#A0A0A0 100%)}
+.podium-3{background:linear-gradient(135deg,#CD7F32 0%,#B87333 100%)}
+input[type=checkbox]{accent-color:#4f46e5}
 </style>
 </head>
-<body>
-<div class="board">
-
-  <header>
-    <div>
-      <h1>HOF · Sales Pipeline</h1>
-      <div class="sub">Canada PR · Australia Skilled · EB2‑NIW · Visit Visa</div>
-    </div>
-    <div class="status">
-      <div class="dot-row"><span class="dot" id="statusDot"></span><span id="statusText">LOADING…</span></div>
-      <div id="clock" class="mono"></div>
-      <button id="refreshBtn">↻ Refresh</button>
-    </div>
-  </header>
-
-  <section>
-    <div class="section-label">The Funnel</div>
-    <div class="funnel" id="funnelEl"></div>
-    <div class="lost-strip">
-      <span>CLOSED / LOST — leaked out of the pipeline entirely</span>
-      <span><b id="lostCount">0</b> &nbsp; <span id="lostRate" class="mono"></span></span>
-    </div>
-  </section>
-
-  <section>
-    <div class="section-label">By Program</div>
-    <div class="programs" id="programsEl"></div>
-  </section>
-
-  <section>
-    <div class="section-label">By Consultant</div>
-    <table>
-      <thead><tr>
-        <th>Consultant</th><th style="text-align:right">Assigned</th><th style="text-align:right">Won</th>
-        <th style="text-align:right">Lost</th><th style="text-align:right">Win Rate</th><th>Most Stuck At</th>
-      </tr></thead>
-      <tbody id="rosterEl"></tbody>
-    </table>
-  </section>
-
-  <footer>
-    <span>Stage mapping and connection instructions are in the setup guide that shipped alongside this file.</span>
-    <span id="updatedAt"></span>
-  </footer>
-
-</div>
+<body class="min-h-screen bg-slate-50 text-slate-800">
 
 <script>
-// ===== CONNECT YOUR LIVE SHEET HERE =====
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0Op8QpWLPdfnP9E5hGNkQFaJxJ_J1KXnVQeTVlhMiefB4L2Gn9k_W89kWAVThPg-e/exec"; // paste your Apps Script /exec URL here — leave blank to run on demo data
-// ==========================================
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwp70m3iY9eoVEeyBH8OIPodI4V7KrJfTEx87Xjcrwgvp71fbV0Z5DxRpwLasXyzio4bw/exec";
+const USE_GOOGLE_SHEETS = true;
+</script>
 
-const STAGE_MAP = {
-  "Initial Call/Welcome Email": "Contact Attempted",
-  "Welcome Call": "Contact Attempted",
-  "Qualified Client": "Discovery/Qualifying",
-  "CCL Sent": "Objection/Review",
-  "Expected Sales": "Objection/Review",
-  "Expected Sale": "Objection/Review",
-  "Postpone (No Specific Date)": "Objection/Review",
-  "Postponed": "Objection/Review",
-  "Last Month Rollover": "Objection/Review",
-  "Payment Made/Deal Won": "Closed/Won",
-  "Sale/Closed Client": "Closed/Won",
-  "Sale Closed": "Closed/Won",
-  "Deal Lost": "Closed/Lost"
-};
-const RANK = { "Contact Attempted":1, "Discovery/Qualifying":2, "Objection/Review":3, "Closed/Won":4 };
+<nav class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-50 glass">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-200">H</div>
+<div><h1 class="font-bold text-lg leading-tight text-slate-800">HOF Migration</h1><p class="text-xs text-slate-500">Consultant QA Dashboard v2</p></div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-slate-100 rounded-lg p-0.5">
+<button onclick="setPeriod('today')" id="period-today" class="px-3 py-1.5 rounded-md text-xs font-medium transition bg-white shadow-sm text-indigo-700">Today</button>
+<button onclick="setPeriod('week')" id="period-week" class="px-3 py-1.5 rounded-md text-xs font-medium transition text-slate-500 hover:text-slate-700">This Week</button>
+<button onclick="setPeriod('month')" id="period-month" class="px-3 py-1.5 rounded-md text-xs font-medium transition text-slate-500 hover:text-slate-700">This Month</button>
+</div>
+<div id="syncStatus" class="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 px-1"></div>
+<div class="bg-slate-100 rounded-full px-4 py-1.5 text-sm font-medium" id="currentDate"></div>
+<button onclick="saveAllData()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Save</button>
+<button onclick="exportReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">Export</button>
+</div>
+</nav>
 
-const FUNNEL = [
-  { key:"lead",    label:"LEAD GENERATED",        sub:"Marketing",              rank:0 },
-  { key:"contact", label:"CONTACT ATTEMPTED",      sub:"Cold Call / Text",       rank:1 },
-  { key:"disco",   label:"DISCOVERY / QUALIFYING", sub:"Goals & Budget",         rank:2 },
-  { key:"pitch",   label:"PITCH / SOLUTION",       sub:"Not tracked in HubSpot", rank:null, gap:true },
-  { key:"obj",     label:"OBJECTION / REVIEW",     sub:"Handling Hesitation",    rank:3 },
-  { key:"won",     label:"CLOSED / WON",           sub:"Contract Signed",        rank:4 }
+<div class="flex">
+<aside class="w-64 bg-white border-r border-slate-200 min-h-screen p-4 hidden lg:block">
+<div class="space-y-1">
+<button onclick="switchView('overview')" id="nav-overview" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 flex items-center gap-3 transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>Executive Overview</button>
+<button onclick="switchView('qa-checklist')" id="nav-qa-checklist" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>Daily QA Checklist</button>
+<button onclick="switchView('trends')" id="nav-trends" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>Trends & Analytics</button>
+<button onclick="switchView('leaderboard')" id="nav-leaderboard" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>Leaderboard</button>
+<button onclick="switchView('product-line')" id="nav-product-line" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>Performance by Product</button>
+<button onclick="switchView('consultants')" id="nav-consultants" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>Manage Consultants</button>
+<button onclick="switchView('certification')" id="nav-certification" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Certification Center</button>
+<button onclick="switchView('alerts')" id="nav-alerts" class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>Alerts & Tasks
+<span id="alertBadge" class="ml-auto bg-slate-300 text-white text-xs px-2 py-0.5 rounded-full">0</span></button>
+</div>
+<div class="mt-8 pt-6 border-t border-slate-200">
+<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Scoring Weights</h3>
+<div class="space-y-3">
+<div><div class="flex justify-between text-xs mb-1"><span>Call Handling (CHS)</span><span class="font-medium">35%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500 rounded-full score-bar" style="width:35%"></div></div></div>
+<div><div class="flex justify-between text-xs mb-1"><span>Process Adherence (PAS)</span><span class="font-medium">35%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full score-bar" style="width:35%"></div></div></div>
+<div><div class="flex justify-between text-xs mb-1"><span>Closing Effectiveness (CES)</span><span class="font-medium">30%</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full score-bar" style="width:30%"></div></div></div>
+<p class="text-[10px] text-slate-400 leading-relaxed pt-1">Call Roadmap is tracked per review for coaching but isn't weighted into Composite.</p>
+</div>
+</div>
+</aside>
+
+<main class="flex-1 p-6 overflow-auto">
+
+<section id="view-overview" class="fade-in"></section>
+<section id="view-qa-checklist" class="hidden"></section>
+<section id="view-trends" class="hidden"></section>
+<section id="view-leaderboard" class="hidden"></section>
+<section id="view-product-line" class="hidden"></section>
+<section id="view-consultants" class="hidden"></section>
+<section id="view-certification" class="hidden"></section>
+<section id="view-alerts" class="hidden"></section>
+
+</main>
+</div>
+
+<!-- QA Entry Modal -->
+<div id="entryModal" class="fixed inset-0 modal-overlay z-[60] hidden flex items-center justify-center p-4">
+<div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+<div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl z-10">
+<h3 id="entryModalTitle" class="font-bold text-slate-800">New QA Review</h3>
+<button onclick="closeEntryModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-6 space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-medium text-slate-500">Date</label><input id="entryDate" type="date" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+<div><label class="text-xs font-medium text-slate-500">Consultant</label><select id="entryConsultant" onchange="toggleUncertifiedWarning()" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></select></div>
+</div>
+<div id="uncertifiedWarning" class="hidden text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">This consultant is not yet marked Certified — confirm this is a supervised or training case.</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-medium text-slate-500">Customer / Family Name</label><input id="entryCustomer" type="text" placeholder="e.g. Kumar Family" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+<div><label class="text-xs font-medium text-slate-500">Product / Case Type</label><input id="entryProduct" list="productSuggestions" type="text" placeholder="e.g. Canada PR" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200">
+<datalist id="productSuggestions">
+<option value="Canada PR"><option value="Express Entry"><option value="Study Permit"><option value="Work Permit"><option value="Spouse/Family Sponsorship"><option value="Visitor Visa">
+</datalist>
+</div>
+</div>
+<div class="border-t border-slate-100 pt-4">
+<p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Client Details (optional)</p>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-medium text-slate-500">Client Name</label><input id="entryClientName" type="text" placeholder="e.g. Raj Kumar" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+<div><label class="text-xs font-medium text-slate-500">Client Number</label><input id="entryClientNumber" type="text" placeholder="Phone or case #" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+</div>
+<div class="mt-4"><label class="text-xs font-medium text-slate-500">Case Link</label><input id="entryCaseLink" type="text" placeholder="https://... link to the case file" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+</div>
+
+<div id="entryChecklistSections"></div>
+
+<div class="mt-1 flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 border border-slate-200"><span class="text-xs font-medium text-slate-500">Composite Score <span class="text-slate-400">(CHS 35% + PAS 35% + CES 30%)</span></span><span id="entryCompositePreview" class="text-base font-bold text-indigo-600">0</span></div>
+
+<div><label class="text-xs font-medium text-slate-500">Notes</label><textarea id="entryNotes" rows="2" placeholder="Optional QA feedback..." class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></textarea></div>
+</div>
+<div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 sticky bottom-0 bg-white rounded-b-2xl">
+<button onclick="closeEntryModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+<button onclick="submitEntry()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Save Review</button>
+</div>
+</div>
+</div>
+
+<!-- Consultant Modal -->
+<div id="consultantModal" class="fixed inset-0 modal-overlay z-[60] hidden flex items-center justify-center p-4">
+<div class="bg-white rounded-2xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+<div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+<h3 id="consultantModalTitle" class="font-bold text-slate-800">Add Consultant</h3>
+<button onclick="closeConsultantModal()" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+</div>
+<div class="p-6 space-y-4">
+<div><label class="text-xs font-medium text-slate-500">Full Name</label><input id="consultantName" type="text" placeholder="e.g. Ahmed Hassan" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-medium text-slate-500">Certification Level</label>
+<select id="consultantLevel" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200">
+<option value="Trainee">Trainee</option><option value="Consultant">Consultant</option><option value="Senior Consultant">Senior Consultant</option><option value="Team Lead">Team Lead</option>
+</select></div>
+<div><label class="text-xs font-medium text-slate-500">Tenure (years)</label><input id="consultantTenure" type="number" min="0" step="0.1" placeholder="e.g. 2.5" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div><label class="text-xs font-medium text-slate-500">Training Hours</label><input id="consultantTrainingHours" type="number" min="0" step="1" value="0" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+<div><label class="text-xs font-medium text-slate-500">Mock Calls Completed</label><input id="consultantMockCalls" type="number" min="0" step="1" value="0" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"></div>
+</div>
+<label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer pt-1"><input id="consultantCertified" type="checkbox" class="rounded border-slate-300">Certified (can handle client files)</label>
+</div>
+<div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
+<button onclick="closeConsultantModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+<button onclick="submitConsultant()" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">Save Consultant</button>
+</div>
+</div>
+</div>
+
+<div id="toast" class="fixed bottom-6 right-6 z-[70] hidden"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const WEIGHTS = { chs: 0.35, pas: 0.35, ces: 0.30 };   // matches sidebar Scoring Weights
+const ALERT_THRESHOLD = 70;   // composite below this raises a risk alert on Alerts & Tasks
+const AVATAR_COLORS = ['bg-indigo-100 text-indigo-700','bg-emerald-100 text-emerald-700','bg-amber-100 text-amber-700','bg-rose-100 text-rose-700','bg-sky-100 text-sky-700','bg-violet-100 text-violet-700'];
+const VIEWS = ['overview','qa-checklist','trends','leaderboard','product-line','consultants','certification','alerts'];
+
+const CHS_ITEMS = [
+  'Maintains chest register / authority voice throughout call',
+  'Pace controlled at 130-150 WPM (not rushed)',
+  'Uses silence discipline: 4+ seconds after diagnostic questions',
+  'Handles interruptions with Stop-Freeze-Volume Drop protocol',
+  'Zero upspeak incidents (statements sound like statements)',
+  'Sets clear next step / payment ask / close before ending',
+  'Active listening: paraphrases client concerns accurately',
+  'Controls call direction without being pushy'
 ];
+const PAS_ITEMS = [
+  'Intake form 100% complete before call (ECA status, spouse, job duties)',
+  'NOC code validated with duty mapping present',
+  'Evidence checklist uploaded and verified in CRM',
+  'ECA ordered / proof of funds verified / NIW letters requested',
+  'All SLA deadlines met (tasks within target days)',
+  'Correct product recommendation based on client profile',
+  'Fee disclosure done at correct stage (not rushed, not delayed)',
+  'Documentation accuracy: no errors in client data entry'
+];
+const CES_ITEMS = [
+  'Proposal sent within 24 hours of discovery call',
+  'Follow-up calls completed on scheduled dates',
+  'Objections handled with structured rebuttal (not defensive)',
+  'Payment collected or payment plan confirmed',
+  'No unnecessary reprice events after discovery',
+  'Conversion from qualified lead to paid client',
+  'Time from intake to first payment within target',
+  'Upsell / cross-sell attempted where appropriate'
+];
+const ROADMAP_ITEMS = ['Building Rapport', 'Qualifying Client', 'Presentation', 'Closing'];
 
-const PROGRAMS = ["Canada PR","Australia Skilled","EB2-NIW","Visit Visa"];
+/* ============ STATE ============
+   In-memory only for the life of this page load (never localStorage — see saveAllData/loadFromSheets
+   for the Google Sheets sync, which is the real persistence layer for this app). */
+let state = {
+  period: 'today',
+  currentView: 'overview',
+  consultants: [
+    { id: 'c1', name: 'Aiman', certLevel: 'Trainee', tenureYears: 0.1, trainingHours: 54, mockCalls: 1, certified: true }
+  ],
+  entries: [
+    { id: 'e1', date: todayISO(), consultantId: 'c1', customerName: 'Kumar Family', product: 'Canada PR', clientName: '', clientNumber: '', caseLink: '',
+      chsChecks: Array(CHS_ITEMS.length).fill(true),
+      pasChecks: Array(PAS_ITEMS.length).fill(true),
+      cesChecks: Array(CES_ITEMS.length).fill(true),
+      roadmapChecks: Array(ROADMAP_ITEMS.length).fill(true),
+      notes: '' }
+  ],
+  resolvedAlerts: [],
+  editingEntryId: null,
+  editingConsultantId: null
+};
+let charts = {};
+let checklistSearch = '';
 
-// ---------- seeded demo data (only used until APPS_SCRIPT_URL is set) ----------
-function mulberry32(seed){ return function(){ let t = seed += 0x6D2B79F5; t = Math.imul(t ^ t>>>15, t | 1); t ^= t + Math.imul(t ^ t>>>7, t | 61); return ((t ^ t>>>14) >>> 0) / 4294967296; }; }
-function generateDemoData(){
-  const rand = mulberry32(42);
-  const consultants = ["A. Khan","S. Fernandes","R. Osei","M. Iqbal","P. Nair","J. Cruz","H. Al-Sayed"];
-  const openStages = Object.keys(STAGE_MAP).filter(s => STAGE_MAP[s] !== "Closed/Lost" && STAGE_MAP[s] !== "Closed/Won");
-  const programWeights = [["Canada PR",0.33],["Australia Skilled",0.24],["EB2-NIW",0.32],["Visit Visa",0.11]];
-  const pick = (arr) => arr[Math.floor(rand()*arr.length)];
-  const weightedProgram = () => { let r = rand(), acc=0; for (const [p,w] of programWeights){ acc+=w; if (r<=acc) return p; } return "Canada PR"; };
+/* ============ HELPERS ============ */
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function uid(prefix){ return prefix + '_' + Math.random().toString(36).slice(2,9); }
+function pct(checks, total){ if(!total) return 0; const n=(checks||[]).filter(Boolean).length; return Math.round(n/total*100); }
+function chsScore(e){ return pct(e.chsChecks, CHS_ITEMS.length); }
+function pasScore(e){ return pct(e.pasChecks, PAS_ITEMS.length); }
+function cesScore(e){ return pct(e.cesChecks, CES_ITEMS.length); }
+function roadmapScore(e){ return pct(e.roadmapChecks, ROADMAP_ITEMS.length); }
+function composite(e){ return Math.round(chsScore(e)*WEIGHTS.chs + pasScore(e)*WEIGHTS.pas + cesScore(e)*WEIGHTS.ces); }
+function unmetItems(e){
+  const out = [];
+  CHS_ITEMS.forEach(function(label,i){ if(!(e.chsChecks && e.chsChecks[i])) out.push(label); });
+  PAS_ITEMS.forEach(function(label,i){ if(!(e.pasChecks && e.pasChecks[i])) out.push(label); });
+  CES_ITEMS.forEach(function(label,i){ if(!(e.cesChecks && e.cesChecks[i])) out.push(label); });
+  return out;
+}
+function initials(name){ return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+function colorFor(id){ let h=0; for(const ch of String(id)) h=(h*31+ch.charCodeAt(0))>>>0; return AVATAR_COLORS[h % AVATAR_COLORS.length]; }
+function consultantById(id){ return state.consultants.find(c=>c.id===id); }
+function scoreColor(v){ return v>=90?'text-emerald-600':v>=75?'text-amber-600':'text-red-600'; }
+function fmtDate(iso){ const d = new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function safeLink(url){ const u=(url||'').trim(); if(!u) return ''; return /^https?:\/\//i.test(u) ? u : 'https://'+u; }
+function avg(arr){ return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function groupByConsultant(entries){ return entries.reduce((acc,e)=>{ (acc[e.consultantId]=acc[e.consultantId]||[]).push(e); return acc; },{}); }
+function groupByProduct(entries){ return entries.reduce((acc,e)=>{ const k=e.product||'Unspecified'; (acc[k]=acc[k]||[]).push(e); return acc; },{}); }
 
-  const deals = [];
-  const N = 260;
-  for (let i=0;i<N;i++){
-    const outcomeRoll = rand();
-    let stage, status;
-    if (outcomeRoll < 0.16){ stage="Deal Lost"; status="Lost"; }
-    else if (outcomeRoll < 0.30){ stage = pick(["Payment Made/Deal Won","Sale/Closed Client"]); status="Won"; }
-    else { stage = pick(openStages); status="Open"; }
-    deals.push({
-      "Deal ID": "D"+(1000+i),
-      "Program": weightedProgram(),
-      "Consultant": pick(consultants),
-      "HubSpot Stage": stage,
-      "Status": status
+function inPeriod(iso, period){
+  const d = new Date(iso+'T00:00:00');
+  const now = new Date(); now.setHours(0,0,0,0);
+  if(period==='today') return iso === todayISO();
+  if(period==='week'){
+    const day = now.getDay();
+    const diffToMonday = day===0 ? 6 : day-1;
+    const start = new Date(now); start.setDate(now.getDate()-diffToMonday);
+    return d>=start;
+  }
+  if(period==='month') return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+  return true;
+}
+function periodEntries(period = state.period){ return state.entries.filter(e=>inPeriod(e.date, period)); }
+function periodLabel(p=state.period){ return p==='today'?'Today':p==='week'?'This Week':'This Month'; }
+
+/* ============ ICONS ============ */
+function iconClipboard(){return '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>';}
+function iconChart(){return '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M3 4h18v16H3V4z"/></svg>';}
+function iconCheck(){return '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';}
+function iconAlert(){return '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg>';}
+function iconLink(){return '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>';}
+
+/* ============ SHARED UI BITS ============ */
+function emptyState(title, subtitle){
+  return '<div class="text-center py-12 px-6">'
+    + '<div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center text-slate-300">'
+    + '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>'
+    + '<p class="text-sm font-medium text-slate-600">'+esc(title)+'</p>'
+    + '<p class="text-xs text-slate-400 mt-1">'+esc(subtitle)+'</p></div>';
+}
+function kpiCard(label, value, color, icon){
+  const colors = { blue:'bg-blue-50 text-blue-600', indigo:'bg-indigo-50 text-indigo-600', emerald:'bg-emerald-50 text-emerald-600', red:'bg-red-50 text-red-600', slate:'bg-slate-100 text-slate-500' };
+  return '<div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">'
+    + '<div class="flex items-center justify-between mb-2">'
+    + '<span class="text-xs font-medium text-slate-400 uppercase tracking-wide">'+esc(label)+'</span>'
+    + '<div class="w-8 h-8 rounded-lg '+colors[color]+' flex items-center justify-center">'+icon+'</div></div>'
+    + '<p class="text-2xl font-bold text-slate-800">'+value+'</p></div>';
+}
+function checklistSectionHtml(catKey, title, subtitle, items, dotColor){
+  return '<div class="border-t border-slate-100 pt-4">'
+    + '<div class="flex items-center justify-between mb-0.5">'
+    + '<p class="text-xs font-semibold text-slate-600 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full '+dotColor+' inline-block"></span>'+esc(title)+'</p>'
+    + '<span id="pct-'+catKey+'" class="text-xs font-bold text-slate-500">0%</span></div>'
+    + (subtitle ? '<p class="text-[11px] text-slate-400 mb-2 ml-3.5">'+esc(subtitle)+'</p>' : '<div class="mb-2"></div>')
+    + '<div class="space-y-0.5 max-h-40 overflow-y-auto pr-1">'
+    + items.map(function(label,i){ return '<label class="flex items-start gap-2 py-1 text-sm text-slate-600 hover:bg-slate-50 rounded px-1 cursor-pointer"><input type="checkbox" class="mt-0.5" data-cat="'+catKey+'" data-idx="'+i+'" onchange="updateCompositePreview()"> <span>'+esc(label)+'</span></label>'; }).join('')
+    + '</div></div>';
+}
+function entryRow(e, opts){
+  opts = opts || {};
+  const c = consultantById(e.consultantId);
+  const comp = composite(e);
+  const rmChecked = (e.roadmapChecks||[]).filter(Boolean).length;
+  const clientBits = [e.clientName, e.clientNumber].filter(Boolean).map(esc).join(' &bull; ');
+  const hasLink = !!e.caseLink;
+  const hasClientInfo = clientBits || hasLink;
+  let clientCol;
+  if(hasClientInfo){
+    clientCol = '<p class="text-xs text-slate-400">Client</p>'
+      + '<p class="text-sm text-slate-700 truncate">'+(clientBits||'&mdash;')+'</p>'
+      + (hasLink ? '<a href="'+esc(safeLink(e.caseLink))+'" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 mt-0.5">Open case '+iconLink()+'</a>' : '');
+  } else {
+    clientCol = '<p class="text-xs text-slate-300 italic">No client details</p>';
+  }
+  const actions = opts.compact ? '' :
+    '<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">'
+    + '<button onclick="openEntryModal(\''+e.id+'\')" title="Edit" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>'
+    + '<button onclick="deleteEntry(\''+e.id+'\')" title="Delete" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div>';
+
+  return '<div class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition group">'
+    + '<div class="w-9 h-9 rounded-full '+(c?colorFor(c.id):'bg-slate-100 text-slate-500')+' flex items-center justify-center text-sm font-bold shrink-0">'+(c?initials(c.name):'?')+'</div>'
+    + '<div class="min-w-[140px]"><p class="text-sm font-semibold text-slate-800">'+esc(c?c.name:'Unknown')+'</p><p class="text-xs text-slate-400">'+esc(c?c.certLevel:'')+'</p></div>'
+    + '<div class="min-w-[160px]"><p class="text-xs text-slate-400">Customer</p><p class="text-sm font-medium text-slate-700">'+(esc(e.customerName)||'&mdash;')+'</p><p class="text-xs text-slate-400">'+esc(e.product)+'</p></div>'
+    + '<div class="min-w-[170px] flex-1">'+clientCol+'</div>'
+    + '<div class="flex items-center gap-3 shrink-0">'
+    + '<div class="text-center w-10"><p class="text-xs text-slate-400">CHS</p><p class="text-sm font-bold '+scoreColor(chsScore(e))+'">'+chsScore(e)+'</p></div>'
+    + '<div class="text-center w-10"><p class="text-xs text-slate-400">PAS</p><p class="text-sm font-bold '+scoreColor(pasScore(e))+'">'+pasScore(e)+'</p></div>'
+    + '<div class="text-center w-10"><p class="text-xs text-slate-400">CES</p><p class="text-sm font-bold '+scoreColor(cesScore(e))+'">'+cesScore(e)+'</p></div>'
+    + '<div class="text-center w-14"><p class="text-xs text-slate-400">Roadmap</p><p class="text-sm font-bold text-violet-600">'+rmChecked+'/'+ROADMAP_ITEMS.length+'</p></div>'
+    + '<div class="text-center bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-200"><p class="text-[10px] text-slate-400 uppercase tracking-wide">Composite</p><p class="text-sm font-bold '+scoreColor(comp)+'">'+comp+'</p></div>'
+    + actions + '</div></div>';
+}
+function chartData(entries){
+  const byDate = {};
+  entries.forEach(e=>{ (byDate[e.date]=byDate[e.date]||[]).push(composite(e)); });
+  const dates = Object.keys(byDate).sort();
+  return { labels: dates.map(fmtDate), values: dates.map(d=>Math.round(avg(byDate[d]))) };
+}
+function destroyChart(key){ if(charts[key]){ charts[key].destroy(); delete charts[key]; } }
+
+/* ============ NAV / VIEW SWITCHING ============ */
+function switchView(view){
+  state.currentView = view;
+  VIEWS.forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('hidden', v!==view);
+    const btn = document.getElementById('nav-'+v);
+    if(v===view){ btn.classList.add('bg-indigo-50','text-indigo-700'); btn.classList.remove('text-slate-600'); }
+    else { btn.classList.remove('bg-indigo-50','text-indigo-700'); btn.classList.add('text-slate-600'); }
+  });
+  renderCurrentView();
+}
+function renderCurrentView(){
+  const el = document.getElementById('view-'+state.currentView);
+  el.classList.add('fade-in');
+  if(state.currentView==='overview') renderOverview();
+  else if(state.currentView==='qa-checklist') renderChecklist();
+  else if(state.currentView==='trends') renderTrends();
+  else if(state.currentView==='leaderboard') renderLeaderboard();
+  else if(state.currentView==='product-line') renderProductLine();
+  else if(state.currentView==='consultants') renderConsultants();
+  else if(state.currentView==='certification') renderCertification();
+  else if(state.currentView==='alerts') renderAlerts();
+}
+function setPeriod(period){
+  state.period = period;
+  ['today','week','month'].forEach(p=>{
+    const btn = document.getElementById('period-'+p);
+    if(p===period){ btn.classList.add('bg-white','shadow-sm','text-indigo-700'); btn.classList.remove('text-slate-500'); }
+    else { btn.classList.remove('bg-white','shadow-sm','text-indigo-700'); btn.classList.add('text-slate-500'); }
+  });
+  renderCurrentView();
+}
+
+/* ============ OVERVIEW ============ */
+function renderOverview(){
+  const el = document.getElementById('view-overview');
+  const entries = periodEntries();
+  const totalReviews = entries.length;
+  const avgComposite = totalReviews ? Math.round(avg(entries.map(composite))) : 0;
+  const passCount = entries.filter(e=>composite(e)>=75).length;
+  const passRate = totalReviews ? Math.round(passCount/totalReviews*100) : 0;
+  const activeAlerts = state.entries.filter(e=>composite(e)<ALERT_THRESHOLD && !state.resolvedAlerts.includes(e.id)).length;
+
+  const byC = groupByConsultant(entries);
+  const ranked = Object.keys(byC).map(cid=>{
+    const c = consultantById(cid); const list = byC[cid];
+    return c ? { consultant:c, count:list.length, avgScore: Math.round(avg(list.map(composite))) } : null;
+  }).filter(Boolean).sort((a,b)=>b.avgScore-a.avgScore).slice(0,3);
+
+  const recent = [...state.entries].sort((a,b)=> b.date.localeCompare(a.date)).slice(0,6);
+
+  let topPerformersHtml;
+  if(ranked.length){
+    topPerformersHtml = ranked.map((r,i)=>{
+      const medal = i===0?'podium-1 text-white':i===1?'podium-2 text-white':'podium-3 text-white';
+      return '<div class="flex items-center gap-3 py-2 '+(i<ranked.length-1?'border-b border-slate-100':'')+'">'
+        + '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold '+medal+'">'+(i+1)+'</div>'
+        + '<div class="w-8 h-8 rounded-full '+colorFor(r.consultant.id)+' flex items-center justify-center text-xs font-bold">'+initials(r.consultant.name)+'</div>'
+        + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-700 truncate">'+esc(r.consultant.name)+'</p><p class="text-xs text-slate-400">'+r.count+' review'+(r.count===1?'':'s')+'</p></div>'
+        + '<div class="text-sm font-bold '+scoreColor(r.avgScore)+'">'+r.avgScore+'</div></div>';
+    }).join('');
+  } else {
+    topPerformersHtml = emptyState('No reviews yet this period','Add a QA review to see your top performers here.');
+  }
+
+  el.innerHTML =
+    '<div class="flex items-center justify-between mb-6">'
+    + '<div><h2 class="text-2xl font-bold text-slate-800">Executive Overview</h2><p class="text-sm text-slate-500">'+periodLabel()+' &bull; '+totalReviews+' QA review'+(totalReviews===1?'':'s')+' logged</p></div></div>'
+    + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">'
+    + kpiCard('Total Reviews', totalReviews, 'blue', iconClipboard())
+    + kpiCard('Avg Composite', avgComposite, 'indigo', iconChart())
+    + kpiCard('Pass Rate', passRate+'%', 'emerald', iconCheck())
+    + kpiCard('Active Risk Alerts', activeAlerts, activeAlerts>0?'red':'slate', iconAlert())
+    + '</div>'
+    + '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">'
+    + '<div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Score Trend</h3><div class="chart-container"><canvas id="overviewTrendChart"></canvas></div></div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Top Performers</h3>'+topPerformersHtml+'</div>'
+    + '</div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">'
+    + '<div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between"><h3 class="font-semibold text-slate-700">Recent QA Reviews</h3><button onclick="switchView(\'qa-checklist\')" class="text-xs font-medium text-indigo-600 hover:text-indigo-700">View all &rarr;</button></div>'
+    + (recent.length ? '<div class="overflow-x-auto"><div class="divide-y divide-slate-100 min-w-[1000px]">'+recent.map(e=>entryRow(e,{compact:true})).join('')+'</div></div>' : emptyState('No QA reviews yet','Click "+ New QA Review" on the Daily QA Checklist page to log your first one.'))
+    + '</div>';
+
+  renderOverviewChart(entries);
+}
+function renderOverviewChart(entries){
+  destroyChart('overviewTrend');
+  const ctx = document.getElementById('overviewTrendChart');
+  if(!ctx) return;
+  const d = chartData(entries);
+  charts.overviewTrend = new Chart(ctx, {
+    type:'line',
+    data:{ labels: d.labels.length?d.labels:['—'], datasets:[{ label:'Avg Composite', data: d.values.length?d.values:[0], borderColor:'#4f46e5', backgroundColor:'rgba(79,70,229,.08)', fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#4f46e5' }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ min:0, max:100, ticks:{stepSize:25}, grid:{color:'#f1f5f9'} }, x:{ grid:{display:false} } } }
+  });
+}
+
+/* ============ DAILY QA CHECKLIST ============ */
+function renderChecklist(){
+  const el = document.getElementById('view-qa-checklist');
+  let entries = periodEntries().sort((a,b)=> b.date.localeCompare(a.date));
+  if(checklistSearch){
+    const q = checklistSearch.toLowerCase();
+    entries = entries.filter(e=>{
+      const c = consultantById(e.consultantId);
+      return [c?c.name:'', e.customerName, e.clientName, e.product].filter(Boolean).some(v=>v.toLowerCase().includes(q));
     });
   }
-  return deals;
+  el.innerHTML =
+    '<div class="flex items-center justify-between mb-6 flex-wrap gap-3">'
+    + '<div><h2 class="text-2xl font-bold text-slate-800">Daily QA Checklist</h2><p class="text-sm text-slate-500">'+periodLabel()+' &bull; '+entries.length+' review'+(entries.length===1?'':'s')+'</p></div>'
+    + '<div class="flex items-center gap-2">'
+    + '<input id="checklistSearchInput" type="text" placeholder="Search consultant, customer, client..." value="'+esc(checklistSearch)+'" oninput="checklistSearch=this.value; renderChecklist()" class="text-sm border border-slate-200 rounded-lg px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-indigo-200">'
+    + '<button onclick="openEntryModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm whitespace-nowrap">+ New QA Review</button>'
+    + '</div></div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">'
+    + (entries.length ? '<div class="overflow-x-auto"><div class="divide-y divide-slate-100 min-w-[1050px]">'+entries.map(e=>entryRow(e)).join('')+'</div></div>' : emptyState('No QA reviews for '+periodLabel().toLowerCase(), 'Click "+ New QA Review" to log your first review for this period.'))
+    + '</div>';
+
+  const input = document.getElementById('checklistSearchInput');
+  if(input){ input.focus(); const v=input.value; input.setSelectionRange(v.length, v.length); }
 }
 
-// ---------- data loading ----------
-async function loadData(){
-  setStatus("loading");
-  if (APPS_SCRIPT_URL){
-    try{
-      const res = await fetch(APPS_SCRIPT_URL);
-      if (!res.ok) throw new Error("bad response");
-      const json = await res.json();
-      setStatus("live");
-      document.getElementById("updatedAt").textContent = "Synced " + new Date(json.updatedAt).toLocaleString();
-      return json.deals;
-    }catch(err){
-      console.warn("Falling back to demo data:", err);
-    }
+/* ============ TRENDS & ANALYTICS ============ */
+function renderTrends(){
+  const el = document.getElementById('view-trends');
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
+  const cutoffISO = cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
+  const entries = state.entries.filter(e=>e.date >= cutoffISO);
+
+  const byC = groupByConsultant(entries);
+  const rows = Object.keys(byC).map(cid=>{
+    const c = consultantById(cid); if(!c) return null;
+    const list = byC[cid];
+    return { c, count:list.length, comp:Math.round(avg(list.map(composite))) };
+  }).filter(Boolean).sort((a,b)=>b.comp-a.comp);
+
+  el.innerHTML =
+    '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Trends & Analytics</h2><p class="text-sm text-slate-500">Last 30 days across all consultants</p></div>'
+    + '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">'
+    + '<div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Composite Score Trend</h3><div class="chart-container"><canvas id="trendsLineChart"></canvas></div></div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Score Distribution</h3><div class="chart-container"><canvas id="trendsDoughnutChart"></canvas></div></div>'
+    + '</div>'
+    + '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">'
+    + '<div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Average by Category</h3><div class="chart-container"><canvas id="trendsBarChart"></canvas></div></div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">By Consultant</h3>'
+    + (rows.length? '<div class="space-y-2 max-h-[200px] overflow-y-auto">'+rows.map(r=>'<div class="flex items-center justify-between text-sm"><span class="text-slate-600 truncate">'+esc(r.c.name)+'</span><span class="font-bold '+scoreColor(r.comp)+'">'+r.comp+'</span></div>').join('')+'</div>' : emptyState('No data yet','Log QA reviews to see consultant trends.'))
+    + '</div></div>';
+
+  renderTrendsCharts(entries);
+}
+function renderTrendsCharts(entries){
+  destroyChart('trendsLine'); destroyChart('trendsDoughnut'); destroyChart('trendsBar');
+
+  const lineCtx = document.getElementById('trendsLineChart');
+  const d = chartData(entries);
+  charts.trendsLine = new Chart(lineCtx, { type:'line', data:{labels:d.labels.length?d.labels:['—'], datasets:[{label:'Avg Composite', data:d.values.length?d.values:[0], borderColor:'#4f46e5', backgroundColor:'rgba(79,70,229,.08)', fill:true, tension:.35, pointRadius:3}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{min:0,max:100,grid:{color:'#f1f5f9'}}, x:{grid:{display:false}}}}});
+
+  const buckets = [0,0,0];
+  entries.forEach(e=>{ const c=composite(e); if(c>=90) buckets[0]++; else if(c>=75) buckets[1]++; else buckets[2]++; });
+  const doughnutCtx = document.getElementById('trendsDoughnutChart');
+  charts.trendsDoughnut = new Chart(doughnutCtx, { type:'doughnut', data:{ labels:['Excellent (90+)','Good (75-89)','Needs Improvement (<75)'], datasets:[{ data: buckets, backgroundColor:['#10b981','#f59e0b','#ef4444'], borderWidth:0 }]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:10} } } } } });
+
+  const barCtx = document.getElementById('trendsBarChart');
+  charts.trendsBar = new Chart(barCtx, { type:'bar', data:{ labels:['Call Handling','Process Adherence','Closing Effectiveness','Call Roadmap'], datasets:[{ data:[ entries.length?Math.round(avg(entries.map(chsScore))):0, entries.length?Math.round(avg(entries.map(pasScore))):0, entries.length?Math.round(avg(entries.map(cesScore))):0, entries.length?Math.round(avg(entries.map(roadmapScore))):0 ], backgroundColor:['#3b82f6','#10b981','#f59e0b','#8b5cf6'], borderRadius:6 }]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{min:0,max:100,grid:{color:'#f1f5f9'}}, x:{grid:{display:false}} } } });
+}
+
+/* ============ LEADERBOARD ============ */
+function podiumCard(entry, place, order){
+  if(!entry) return '<div class="'+order+'"></div>';
+  const grad = place===1?'podium-1':place===2?'podium-2':'podium-3';
+  const h = place===1?'h-40':place===2?'h-32':'h-28';
+  return '<div class="'+order+' text-center">'
+    + '<div class="w-14 h-14 rounded-full '+colorFor(entry.c.id)+' flex items-center justify-center text-base font-bold mx-auto mb-2 border-4 border-white shadow">'+initials(entry.c.name)+'</div>'
+    + '<p class="font-semibold text-slate-800 text-sm truncate">'+esc(entry.c.name)+'</p>'
+    + '<p class="text-xs text-slate-400 mb-2">'+entry.comp+' pts</p>'
+    + '<div class="'+grad+' '+h+' rounded-t-xl flex items-start justify-center pt-3"><span class="text-white font-bold text-2xl">'+place+'</span></div></div>';
+}
+function renderLeaderboard(){
+  const el = document.getElementById('view-leaderboard');
+  const entries = periodEntries();
+  const byC = groupByConsultant(entries);
+  const ranked = Object.keys(byC).map(cid=>{
+    const c = consultantById(cid); if(!c) return null;
+    const list = byC[cid];
+    return { c, count:list.length, comp: Math.round(avg(list.map(composite))) };
+  }).filter(Boolean).sort((a,b)=>b.comp-a.comp);
+
+  if(!ranked.length){
+    el.innerHTML = '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Leaderboard</h2><p class="text-sm text-slate-500">Ranked by average composite score &bull; '+periodLabel()+'</p></div>'
+      + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm">'+emptyState('No reviews logged for '+periodLabel().toLowerCase(), 'The leaderboard fills in as QA reviews are added.')+'</div>';
+    return;
   }
-  setStatus("demo");
-  document.getElementById("updatedAt").textContent = "Sample data — connect your sheet to go live";
-  return generateDemoData();
+  const podium = ranked.slice(0,3);
+
+  el.innerHTML =
+    '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Leaderboard</h2><p class="text-sm text-slate-500">Ranked by average composite score &bull; '+periodLabel()+'</p></div>'
+    + '<div class="grid grid-cols-3 gap-4 mb-6 items-end">'
+    + podiumCard(podium[1], 2, 'order-1') + podiumCard(podium[0], 1, 'order-2') + podiumCard(podium[2], 3, 'order-3')
+    + '</div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><table class="w-full text-sm">'
+    + '<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide"><tr><th class="text-left px-5 py-3">Rank</th><th class="text-left px-5 py-3">Consultant</th><th class="text-center px-5 py-3">Reviews</th><th class="text-right px-5 py-3">Avg Composite</th></tr></thead>'
+    + '<tbody class="divide-y divide-slate-100">'
+    + ranked.map((r,i)=>'<tr class="hover:bg-slate-50"><td class="px-5 py-3 text-slate-400 font-medium">#'+(i+1)+'</td>'
+      + '<td class="px-5 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full '+colorFor(r.c.id)+' flex items-center justify-center text-xs font-bold">'+initials(r.c.name)+'</div><div><p class="font-medium text-slate-700">'+esc(r.c.name)+'</p><p class="text-xs text-slate-400">'+esc(r.c.certLevel)+'</p></div></div></td>'
+      + '<td class="px-5 py-3 text-center text-slate-500">'+r.count+'</td>'
+      + '<td class="px-5 py-3 text-right font-bold '+scoreColor(r.comp)+'">'+r.comp+'</td></tr>').join('')
+    + '</tbody></table></div>';
 }
 
-function setStatus(mode){
-  const dot = document.getElementById("statusDot");
-  const txt = document.getElementById("statusText");
-  dot.className = "dot" + (mode==="live" ? " live" : mode==="demo" ? " demo" : "");
-  txt.textContent = mode==="live" ? "LIVE — CONNECTED" : mode==="demo" ? "DEMO DATA" : "LOADING…";
+/* ============ PERFORMANCE BY PRODUCT ============ */
+function renderProductLine(){
+  const el = document.getElementById('view-product-line');
+  const entries = periodEntries();
+  const byP = groupByProduct(entries);
+  const rows = Object.keys(byP).map(product=>{
+    const list = byP[product];
+    return { product, count:list.length, chs:Math.round(avg(list.map(chsScore))), pas:Math.round(avg(list.map(pasScore))), ces:Math.round(avg(list.map(cesScore))), comp:Math.round(avg(list.map(composite))) };
+  }).sort((a,b)=>b.count-a.count);
+
+  if(!rows.length){
+    el.innerHTML = '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Performance by Product</h2><p class="text-sm text-slate-500">'+periodLabel()+'</p></div>'
+      + emptyState('No product data for '+periodLabel().toLowerCase(), 'Tag a Product / Case Type when logging a QA review to see this breakdown.');
+    return;
+  }
+
+  el.innerHTML =
+    '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Performance by Product</h2><p class="text-sm text-slate-500">'+periodLabel()+'</p></div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-6"><h3 class="font-semibold text-slate-700 mb-4">Avg Composite by Product</h3><div class="chart-container"><canvas id="productBarChart"></canvas></div></div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><table class="w-full text-sm">'
+    + '<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide"><tr><th class="text-left px-5 py-3">Product / Case Type</th><th class="text-center px-5 py-3">Reviews</th><th class="text-center px-5 py-3">CHS</th><th class="text-center px-5 py-3">PAS</th><th class="text-center px-5 py-3">CES</th><th class="text-right px-5 py-3">Composite</th></tr></thead>'
+    + '<tbody class="divide-y divide-slate-100">'
+    + rows.map(r=>'<tr class="hover:bg-slate-50"><td class="px-5 py-3 font-medium text-slate-700">'+esc(r.product)+'</td><td class="px-5 py-3 text-center text-slate-500">'+r.count+'</td><td class="px-5 py-3 text-center '+scoreColor(r.chs)+'">'+r.chs+'</td><td class="px-5 py-3 text-center '+scoreColor(r.pas)+'">'+r.pas+'</td><td class="px-5 py-3 text-center '+scoreColor(r.ces)+'">'+r.ces+'</td><td class="px-5 py-3 text-right font-bold '+scoreColor(r.comp)+'">'+r.comp+'</td></tr>').join('')
+    + '</tbody></table></div>';
+
+  renderProductChart(rows);
+}
+function renderProductChart(rows){
+  destroyChart('product');
+  const ctx = document.getElementById('productBarChart');
+  charts.product = new Chart(ctx, { type:'bar', data:{ labels: rows.map(r=>r.product), datasets:[{ label:'Avg Composite', data: rows.map(r=>r.comp), backgroundColor:'#6366f1', borderRadius:6 }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{min:0,max:100,grid:{color:'#f1f5f9'}}, y:{grid:{display:false}} } } });
 }
 
-// ---------- compute ----------
-function rankOf(deal){
-  const mapped = STAGE_MAP[deal["HubSpot Stage"]];
-  return RANK[mapped] ?? 0;
+/* ============ MANAGE CONSULTANTS ============ */
+function renderConsultants(){
+  const el = document.getElementById('view-consultants');
+  el.innerHTML =
+    '<div class="flex items-center justify-between mb-6"><div><h2 class="text-2xl font-bold text-slate-800">Manage Consultants</h2><p class="text-sm text-slate-500">Add, edit, or remove consultants from the team.</p></div>'
+    + '<button onclick="openConsultantModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Consultant</button></div>'
+    + (state.consultants.length ? '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm min-w-[800px]">'
+      + '<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide"><tr><th class="text-left px-5 py-3">Consultant</th><th class="text-left px-5 py-3">Level</th><th class="text-center px-5 py-3">Tenure</th><th class="text-center px-5 py-3">Training Hours</th><th class="text-center px-5 py-3">Mock Calls</th><th class="text-center px-5 py-3">Certified</th><th class="text-right px-5 py-3">Actions</th></tr></thead>'
+      + '<tbody class="divide-y divide-slate-100">'
+      + state.consultants.map(c=>
+          '<tr class="hover:bg-slate-50">'
+          + '<td class="px-5 py-3"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full '+colorFor(c.id)+' flex items-center justify-center text-xs font-bold">'+initials(c.name)+'</div><span class="font-medium text-slate-700">'+esc(c.name)+'</span></div></td>'
+          + '<td class="px-5 py-3"><span class="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600">'+esc(c.certLevel)+'</span></td>'
+          + '<td class="px-5 py-3 text-center text-slate-500">'+(c.tenureYears!=null && c.tenureYears!==''? c.tenureYears+'y' : '&mdash;')+'</td>'
+          + '<td class="px-5 py-3 text-center text-slate-500">'+(c.trainingHours!=null?c.trainingHours:0)+'</td>'
+          + '<td class="px-5 py-3 text-center text-slate-500">'+(c.mockCalls!=null?c.mockCalls:0)+'</td>'
+          + '<td class="px-5 py-3 text-center">'+(c.certified? '<span class="text-emerald-600 font-medium text-xs">&check; Yes</span>' : '<span class="text-slate-300 text-xs">&mdash;</span>')+'</td>'
+          + '<td class="px-5 py-3 text-right text-xs font-medium space-x-3"><button onclick="openConsultantModal(\''+c.id+'\')" class="text-indigo-600 hover:text-indigo-700">Edit</button><button onclick="deleteConsultant(\''+c.id+'\')" class="text-red-600 hover:text-red-700">Delete</button></td></tr>'
+        ).join('')
+      + '</tbody></table></div></div>' : emptyState('No consultants yet', 'Click "Add Consultant" to add your first team member.'));
 }
-function computeFunnel(deals){
-  const live = deals.filter(d => d.Status !== "Lost");
-  const counts = { 0: live.length };
-  [1,2,3,4].forEach(r => { counts[r] = live.filter(d => rankOf(d) >= r).length; });
-  return counts;
+
+/* ============ CERTIFICATION CENTER ============ */
+function renderCertification(){
+  const el = document.getElementById('view-certification');
+  const rows = state.consultants.map(c=>{
+    const list = state.entries.filter(e=>e.consultantId===c.id).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
+    const comp = list.length? Math.round(avg(list.map(composite))) : null;
+    return { c, count:list.length, comp };
+  });
+  el.innerHTML =
+    '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Certification Center</h2><p class="text-sm text-slate-500">Readiness signals to help decide who\u2019s cleared to handle client files independently &mdash; Certified status is set manually in Manage Consultants</p></div>'
+    + (rows.length ? '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><table class="w-full text-sm">'
+      + '<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide"><tr><th class="text-left px-5 py-3">Consultant</th><th class="text-left px-5 py-3">Level</th><th class="text-center px-5 py-3">Tenure</th><th class="text-center px-5 py-3">Training Hrs</th><th class="text-center px-5 py-3">Mock Calls</th><th class="text-center px-5 py-3">Avg Composite (last 10)</th><th class="text-right px-5 py-3">Certified</th></tr></thead>'
+      + '<tbody class="divide-y divide-slate-100">'
+      + rows.map(r=>'<tr class="hover:bg-slate-50">'
+        + '<td class="px-5 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full '+colorFor(r.c.id)+' flex items-center justify-center text-xs font-bold">'+initials(r.c.name)+'</div><span class="font-medium text-slate-700">'+esc(r.c.name)+'</span></div></td>'
+        + '<td class="px-5 py-3 text-slate-500">'+esc(r.c.certLevel)+'</td>'
+        + '<td class="px-5 py-3 text-center text-slate-500">'+(r.c.tenureYears!=null && r.c.tenureYears!==''? r.c.tenureYears+'y' : '&mdash;')+'</td>'
+        + '<td class="px-5 py-3 text-center text-slate-500">'+(r.c.trainingHours!=null?r.c.trainingHours:0)+'</td>'
+        + '<td class="px-5 py-3 text-center text-slate-500">'+(r.c.mockCalls!=null?r.c.mockCalls:0)+'</td>'
+        + '<td class="px-5 py-3 text-center font-bold '+(r.comp!==null?scoreColor(r.comp):'text-slate-300')+'">'+(r.comp!==null?r.comp:'&mdash;')+'</td>'
+        + '<td class="px-5 py-3 text-right">'+(r.c.certified? '<span class="text-xs font-medium px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">&check; Yes</span>' : '<span class="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-400">Not yet</span>')+'</td></tr>').join('')
+      + '</tbody></table></div>' : emptyState('No consultants yet','Add consultants to start tracking certification readiness.'));
 }
-function computeByProgram(deals){
-  return PROGRAMS.map(p => {
-    const set = deals.filter(d => d.Program === p);
-    const won = set.filter(d => STAGE_MAP[d["HubSpot Stage"]]==="Closed/Won").length;
-    const lost = set.filter(d => d.Status==="Lost").length;
-    const open = set.length - won - lost;
-    return { program:p, total:set.length, won, lost, open, winRate: set.length ? won/set.length : 0 };
+
+/* ============ ALERTS & TASKS (RISK FLAGS) ============ */
+function consultantEntries(consultantId){
+  return state.entries.filter(e=>e.consultantId===consultantId).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function consultantRiskSignals(consultantId){
+  const hist = consultantEntries(consultantId);
+  const signals = [];
+  if (hist.length < 2) return signals; // not enough history to judge a pattern yet
+
+  const last3 = hist.slice(-3);
+  const comps = last3.map(composite);
+
+  if (comps.length >= 3 && comps[0] > comps[1] && comps[1] > comps[2]){
+    signals.push({ label:'Declining trend', detail: comps.join(' \u2192 ')+' over last 3 reviews' });
+  }
+
+  const cats = [['CHS', chsScore], ['PAS', pasScore], ['CES', cesScore]];
+  cats.forEach(function(pair){
+    const label = pair[0], fn = pair[1];
+    const a = Math.round(avg(last3.map(fn)));
+    if (a < 65){
+      signals.push({ label: label+' consistently weak', detail: 'Averaging '+a+'% over last '+last3.length+' review'+(last3.length>1?'s':'')+' \u2014 composite alone would miss this' });
+    }
+  });
+
+  return signals;
+}
+function renderConsultantRiskPanel(){
+  const rows = state.consultants.map(function(c){ return { c: c, signals: consultantRiskSignals(c.id) }; })
+    .filter(function(r){ return r.signals.length > 0; });
+  if (!rows.length) return '';
+  return '<div class="mb-6"><h3 class="text-sm font-semibold text-slate-700 mb-3">Pattern-Based Risk Signals <span class="text-slate-400 font-normal">&mdash; trend and category weakness across recent reviews, not just one bad call</span></h3><div class="space-y-3">'
+    + rows.map(function(r){
+        return '<div class="bg-white rounded-xl border border-amber-200 p-4 shadow-sm flex items-start gap-4">'
+          + '<div class="w-9 h-9 rounded-full '+colorFor(r.c.id)+' flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">'+initials(r.c.name)+'</div>'
+          + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-800">'+esc(r.c.name)+'</p>'
+          + r.signals.map(function(s){ return '<p class="text-xs text-amber-700 mt-1">'+esc(s.label)+': '+esc(s.detail)+'</p>'; }).join('')
+          + '</div></div>';
+      }).join('')
+    + '</div></div>';
+}
+function activeAlertEntries(){
+  return state.entries.filter(e=>composite(e)<ALERT_THRESHOLD && !state.resolvedAlerts.includes(e.id)).sort((a,b)=>b.date.localeCompare(a.date));
+}
+function updateAlertBadge(){
+  const n = activeAlertEntries().length;
+  const badge = document.getElementById('alertBadge');
+  badge.textContent = n;
+  badge.classList.toggle('bg-red-500', n>0);
+  badge.classList.toggle('bg-slate-300', n===0);
+}
+function renderAlerts(){
+  const el = document.getElementById('view-alerts');
+  const alerts = activeAlertEntries();
+  el.innerHTML = '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Alerts & Tasks</h2><p class="text-sm text-slate-500">QA reviews scoring below '+ALERT_THRESHOLD+' composite &mdash; flagged as elevated risk</p></div>'
+    + renderConsultantRiskPanel()
+    + (alerts.length ? '<div class="space-y-3">'+alerts.map(e=>{
+        const c = consultantById(e.consultantId);
+        const unmet = unmetItems(e);
+        const gapsLine = unmet.length ? '<p class="text-xs text-red-600 mt-1">Gaps: '+unmet.slice(0,2).map(esc).join('; ')+(unmet.length>2?' +'+(unmet.length-2)+' more':'')+'</p>' : '';
+        return '<div class="bg-white rounded-xl border border-red-100 p-4 shadow-sm flex items-start gap-4">'
+          + '<div class="w-9 h-9 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0 mt-0.5">'+iconAlert()+'</div>'
+          + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-800">'+esc(c?c.name:'Unknown')+' <span class="text-slate-400 font-normal">&bull; '+(esc(e.customerName)||'&mdash;')+'</span></p>'
+          + '<p class="text-xs text-slate-400">'+fmtDate(e.date)+' &bull; Composite score '+composite(e)+'</p>'
+          + gapsLine + '</div>'
+          + '<button onclick="openEntryModal(\''+e.id+'\')" class="text-xs font-medium text-indigo-600 hover:text-indigo-700 px-2 mt-0.5">Review</button>'
+          + '<button onclick="resolveAlert(\''+e.id+'\')" class="text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg px-3 py-1.5 mt-0.5">Mark Resolved</button></div>';
+      }).join('')+'</div>' : '<div class="bg-white rounded-xl border border-slate-200 shadow-sm">'+emptyState('No active risk alerts', 'Every QA review is currently at or above the composite threshold.')+'</div>');
+}
+function resolveAlert(id){
+  state.resolvedAlerts.push(id);
+  renderAlerts();
+  updateAlertBadge();
+  toast('Alert resolved.', 'success');
+}
+
+/* ============ QA ENTRY MODAL ============ */
+function populateConsultantSelect(){
+  const sel = document.getElementById('entryConsultant');
+  if(!state.consultants.length){ sel.innerHTML = '<option value="">Add a consultant first</option>'; return; }
+  sel.innerHTML = state.consultants.map(c=>'<option value="'+c.id+'">'+esc(c.name)+' — '+esc(c.certLevel)+(c.certified?' ✓':'')+'</option>').join('');
+}
+function toggleUncertifiedWarning(){
+  const id = document.getElementById('entryConsultant').value;
+  const c = consultantById(id);
+  document.getElementById('uncertifiedWarning').classList.toggle('hidden', !c || !!c.certified);
+}
+function clearAllChecks(){
+  document.querySelectorAll('#entryChecklistSections input[type=checkbox]').forEach(cb=>cb.checked=false);
+}
+function setChecksFromEntry(e){
+  clearAllChecks();
+  ['chs','pas','ces','roadmap'].forEach(function(cat){
+    const arr = e[cat+'Checks']||[];
+    document.querySelectorAll('#entryChecklistSections input[data-cat="'+cat+'"]').forEach(function(cb){
+      cb.checked = !!arr[+cb.dataset.idx];
+    });
   });
 }
-function computeByConsultant(deals){
-  const names = [...new Set(deals.map(d => d.Consultant))].filter(Boolean);
-  return names.map(name => {
-    const set = deals.filter(d => d.Consultant === name);
-    const won = set.filter(d => STAGE_MAP[d["HubSpot Stage"]]==="Closed/Won").length;
-    const lost = set.filter(d => d.Status==="Lost").length;
-    const openSet = set.filter(d => d.Status==="Open");
-    const stageCounts = {};
-    openSet.forEach(d => { stageCounts[d["HubSpot Stage"]] = (stageCounts[d["HubSpot Stage"]]||0)+1; });
-    const stuckAt = Object.entries(stageCounts).sort((a,b)=>b[1]-a[1])[0];
-    return { name, assigned:set.length, won, lost, winRate: set.length ? won/set.length : 0, stuckAt: stuckAt ? stuckAt[0] : "—" };
-  }).sort((a,b) => b.assigned - a.assigned);
+function getChecksForCat(cat){
+  const arr = [];
+  document.querySelectorAll('#entryChecklistSections input[data-cat="'+cat+'"]').forEach(function(cb){ arr[+cb.dataset.idx] = cb.checked; });
+  return arr;
 }
+function openEntryModal(id){
+  state.editingEntryId = id || null;
+  populateConsultantSelect();
+  document.getElementById('entryModalTitle').textContent = id ? 'Edit QA Review' : 'New QA Review';
+  document.getElementById('entryChecklistSections').innerHTML =
+    checklistSectionHtml('chs','Call Handling (CHS)', null, CHS_ITEMS, 'bg-blue-500')
+    + checklistSectionHtml('pas','Process Adherence (PAS)', null, PAS_ITEMS, 'bg-emerald-500')
+    + checklistSectionHtml('ces','Closing Effectiveness (CES)', null, CES_ITEMS, 'bg-amber-500')
+    + checklistSectionHtml('roadmap','Call Roadmap', 'Tracked for coaching — not included in the Composite score', ROADMAP_ITEMS, 'bg-violet-500');
 
-// ---------- render ----------
-function animateCount(el, target){
-  const dur = 500, start = performance.now();
-  function tick(now){
-    const p = Math.min(1, (now-start)/dur);
-    el.textContent = Math.round(target * p);
-    if (p < 1) requestAnimationFrame(tick);
+  if(id){
+    const e = state.entries.find(x=>x.id===id);
+    document.getElementById('entryDate').value = e.date;
+    document.getElementById('entryConsultant').value = e.consultantId;
+    document.getElementById('entryCustomer').value = e.customerName||'';
+    document.getElementById('entryProduct').value = e.product||'';
+    document.getElementById('entryClientName').value = e.clientName||'';
+    document.getElementById('entryClientNumber').value = e.clientNumber||'';
+    document.getElementById('entryCaseLink').value = e.caseLink||'';
+    document.getElementById('entryNotes').value = e.notes||'';
+    setChecksFromEntry(e);
+  } else {
+    document.getElementById('entryDate').value = todayISO();
+    document.getElementById('entryCustomer').value = '';
+    document.getElementById('entryProduct').value = '';
+    document.getElementById('entryClientName').value = '';
+    document.getElementById('entryClientNumber').value = '';
+    document.getElementById('entryCaseLink').value = '';
+    document.getElementById('entryNotes').value = '';
+    clearAllChecks();
   }
-  requestAnimationFrame(tick);
+  toggleUncertifiedWarning();
+  updateCompositePreview();
+  document.getElementById('entryModal').classList.remove('hidden');
+}
+function closeEntryModal(){
+  document.getElementById('entryModal').classList.add('hidden');
+  state.editingEntryId = null;
+}
+function catPercent(cat, totalLen){
+  const boxes = document.querySelectorAll('#entryChecklistSections input[data-cat="'+cat+'"]');
+  let checked=0; boxes.forEach(function(cb){ if(cb.checked) checked++; });
+  const pctVal = totalLen? Math.round(checked/totalLen*100) : 0;
+  const pctEl = document.getElementById('pct-'+cat);
+  if(pctEl) pctEl.textContent = pctVal+'%';
+  return pctVal;
+}
+function updateCompositePreview(){
+  const chs = catPercent('chs', CHS_ITEMS.length);
+  const pas = catPercent('pas', PAS_ITEMS.length);
+  const ces = catPercent('ces', CES_ITEMS.length);
+  catPercent('roadmap', ROADMAP_ITEMS.length);
+  const comp = Math.round(chs*WEIGHTS.chs + pas*WEIGHTS.pas + ces*WEIGHTS.ces);
+  document.getElementById('entryCompositePreview').textContent = comp;
+}
+function submitEntry(){
+  const consultantId = document.getElementById('entryConsultant').value;
+  if(!consultantId){ toast('Add a consultant first (see Manage Consultants).', 'error'); return; }
+  const customerName = document.getElementById('entryCustomer').value.trim();
+  if(!customerName){ toast('Customer / family name is required.', 'error'); return; }
+  const payload = {
+    date: document.getElementById('entryDate').value || todayISO(),
+    consultantId: consultantId,
+    customerName: customerName,
+    product: document.getElementById('entryProduct').value.trim(),
+    clientName: document.getElementById('entryClientName').value.trim(),
+    clientNumber: document.getElementById('entryClientNumber').value.trim(),
+    caseLink: document.getElementById('entryCaseLink').value.trim(),
+    chsChecks: getChecksForCat('chs'),
+    pasChecks: getChecksForCat('pas'),
+    cesChecks: getChecksForCat('ces'),
+    roadmapChecks: getChecksForCat('roadmap'),
+    notes: document.getElementById('entryNotes').value.trim()
+  };
+  if(state.editingEntryId){
+    const e = state.entries.find(x=>x.id===state.editingEntryId);
+    Object.assign(e, payload);
+  } else {
+    state.entries.push(Object.assign({ id: uid('e') }, payload));
+  }
+  closeEntryModal();
+  renderCurrentView();
+  updateAlertBadge();
+  toast('QA review saved.', 'success');
+  syncToSheets(false);
+}
+function deleteEntry(id){
+  if(!confirm('Delete this QA review? This cannot be undone.')) return;
+  state.entries = state.entries.filter(e=>e.id!==id);
+  renderCurrentView();
+  updateAlertBadge();
+  toast('QA review deleted.', 'success');
+  syncToSheets(false);
 }
 
-function renderFunnel(counts){
-  const el = document.getElementById("funnelEl");
-  el.innerHTML = "";
-  FUNNEL.forEach((stage, i) => {
-    if (i > 0){
-      const arrow = document.createElement("div");
-      arrow.className = "gate-arrow"; arrow.textContent = "→";
-      el.appendChild(arrow);
+/* ============ CONSULTANT MODAL ============ */
+function openConsultantModal(id){
+  state.editingConsultantId = id || null;
+  document.getElementById('consultantModalTitle').textContent = id ? 'Edit Consultant' : 'Add Consultant';
+  if(id){
+    const c = state.consultants.find(x=>x.id===id);
+    document.getElementById('consultantName').value = c.name;
+    document.getElementById('consultantLevel').value = c.certLevel;
+    document.getElementById('consultantTenure').value = c.tenureYears!=null? c.tenureYears : '';
+    document.getElementById('consultantTrainingHours').value = c.trainingHours!=null? c.trainingHours : 0;
+    document.getElementById('consultantMockCalls').value = c.mockCalls!=null? c.mockCalls : 0;
+    document.getElementById('consultantCertified').checked = !!c.certified;
+  } else {
+    document.getElementById('consultantName').value = '';
+    document.getElementById('consultantLevel').value = 'Trainee';
+    document.getElementById('consultantTenure').value = '';
+    document.getElementById('consultantTrainingHours').value = 0;
+    document.getElementById('consultantMockCalls').value = 0;
+    document.getElementById('consultantCertified').checked = false;
+  }
+  document.getElementById('consultantModal').classList.remove('hidden');
+}
+function closeConsultantModal(){
+  document.getElementById('consultantModal').classList.add('hidden');
+  state.editingConsultantId = null;
+}
+function submitConsultant(){
+  const name = document.getElementById('consultantName').value.trim();
+  if(!name){ toast('Full name is required.', 'error'); return; }
+  const tenureRaw = document.getElementById('consultantTenure').value;
+  const payload = {
+    name: name,
+    certLevel: document.getElementById('consultantLevel').value,
+    tenureYears: tenureRaw===''? null : Math.max(0, +tenureRaw),
+    trainingHours: Math.max(0, +document.getElementById('consultantTrainingHours').value || 0),
+    mockCalls: Math.max(0, +document.getElementById('consultantMockCalls').value || 0),
+    certified: document.getElementById('consultantCertified').checked
+  };
+  if(state.editingConsultantId){
+    const c = state.consultants.find(x=>x.id===state.editingConsultantId);
+    Object.assign(c, payload);
+  } else {
+    state.consultants.push(Object.assign({ id: uid('c') }, payload));
+  }
+  closeConsultantModal();
+  renderCurrentView();
+  toast('Consultant saved.', 'success');
+  syncToSheets(false);
+}
+function deleteConsultant(id){
+  const hasEntries = state.entries.some(e=>e.consultantId===id);
+  if(hasEntries){ toast('This consultant has QA reviews on record and can\'t be removed — delete those reviews first if you really need to.', 'error'); return; }
+  if(!confirm('Remove this consultant?')) return;
+  state.consultants = state.consultants.filter(c=>c.id!==id);
+  renderCurrentView();
+  toast('Consultant removed.', 'success');
+  syncToSheets(false);
+}
+
+/* ============ TOAST ============ */
+let toastTimer;
+function toast(msg, type){
+  const el = document.getElementById('toast');
+  const bg = type==='error' ? 'bg-red-600' : 'bg-slate-800';
+  el.innerHTML = '<div class="'+bg+' text-white text-sm font-medium px-4 py-2.5 rounded-lg shadow-lg fade-in">'+esc(msg)+'</div>';
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.add('hidden'); }, 3000);
+}
+
+/* ============ GOOGLE SHEETS SYNC ============
+   Best-effort only: every feature above works fully in-memory even if this fails.
+   Sends POST with a plain-text body (no Content-Type header) to avoid a CORS
+   preflight against the Apps Script endpoint — a common requirement for
+   script.google.com/macros web apps. Expects:
+     doPost(e): read JSON.parse(e.postData.contents) -> {action:'save', consultants, entries}
+     doGet(e):  if e.parameter.action === 'load', return JSON {consultants:[...], entries:[...]}
+   If your deployed Apps Script uses a different contract, tell me its expected
+   request/response shape (or paste the script) and I'll match it exactly. */
+function setSyncStatus(s){
+  const el = document.getElementById('syncStatus');
+  const map = {
+    saving:  ['<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>','Syncing…'],
+    synced:  ['<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>','Live'],
+    error:   ['<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>','Sync Error'],
+    offline: ['<span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>','Offline']
+  };
+  const pair = map[s] || map.offline;
+  el.innerHTML = pair[0]+'<span>'+pair[1]+'</span>';
+}
+function saveAllData(){ syncToSheets(true); }
+function syncToSheets(manual){
+  if(!USE_GOOGLE_SHEETS || !GOOGLE_SCRIPT_URL){ if(manual) toast('Saved locally. Google Sheets sync is off.', 'success'); return; }
+  setSyncStatus('saving');
+  fetch(GOOGLE_SCRIPT_URL, {
+    method:'POST',
+    body: JSON.stringify({ action:'save', consultants: state.consultants, entries: state.entries })
+  }).then(function(res){
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    setSyncStatus('synced');
+    if(manual) toast('Saved to Google Sheets.', 'success');
+  }).catch(function(err){
+    setSyncStatus('error');
+    if(manual) toast('Could not reach Google Sheets — your changes are still saved in this session.', 'error');
+    console.warn('Sheets sync failed:', err);
+  });
+}
+function loadFromSheets(){
+  if(!USE_GOOGLE_SHEETS || !GOOGLE_SCRIPT_URL){ setSyncStatus('offline'); renderCurrentView(); updateAlertBadge(); return; }
+  setSyncStatus('saving');
+  fetch(GOOGLE_SCRIPT_URL + '?action=load').then(function(res){
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return res.json();
+  }).then(function(data){
+    if(data && Array.isArray(data.consultants) && Array.isArray(data.entries)){
+      state.consultants = data.consultants;
+      state.entries = data.entries;
     }
-    const gate = document.createElement("div");
-    gate.className = "gate" + (stage.gap ? " gap" : "") + (stage.key==="won" ? " won" : "");
-    const countVal = stage.gap ? null : counts[stage.rank];
-    const prevVal = i===0 ? null : (FUNNEL[i-1].gap ? counts[0] : counts[FUNNEL[i-1].rank]);
-    const conv = (!stage.gap && prevVal) ? Math.round((countVal/prevVal)*100) + "% of prev" : "";
-    gate.innerHTML = `
-      <div class="gate-no mono">GATE ${String(i+1).padStart(2,"0")}</div>
-      <div class="gate-label">${stage.label}</div>
-      <div class="gate-sub">${stage.sub}</div>
-      <div class="gate-count mono">${stage.gap ? "— —" : ""}</div>
-      <div class="gate-conv mono">${conv}</div>
-    `;
-    el.appendChild(gate);
-    if (!stage.gap) animateCount(gate.querySelector(".gate-count"), countVal);
+    setSyncStatus('synced');
+  }).catch(function(err){
+    setSyncStatus('offline');
+    console.warn('Could not load from Google Sheets, using local data:', err);
+  }).finally(function(){
+    renderCurrentView();
+    updateAlertBadge();
   });
 }
 
-function renderPrograms(rows){
-  const el = document.getElementById("programsEl");
-  el.innerHTML = rows.map(r => {
-    const wonPct = r.total ? (r.won/r.total*100) : 0;
-    const lostPct = r.total ? (r.lost/r.total*100) : 0;
-    const openPct = 100 - wonPct - lostPct;
-    return `
-      <div class="program-card">
-        <div class="p-tag">Program</div>
-        <div class="p-name">${r.program}</div>
-        <div class="p-total mono">${r.total}</div>
-        <div class="p-bar">
-          <span class="won" style="width:${wonPct}%"></span>
-          <span class="open" style="width:${openPct}%"></span>
-          <span class="lost" style="width:${lostPct}%"></span>
-        </div>
-        <div class="p-stats">
-          <span>Won <b>${r.won}</b></span>
-          <span>Open <b>${r.open}</b></span>
-          <span>Lost <b>${r.lost}</b></span>
-        </div>
-      </div>`;
-  }).join("");
+/* ============ EXPORT CSV ============ */
+function csvCell(v){ const s = String(v==null?'':v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function exportReport(){
+  const entries = periodEntries();
+  if(!entries.length){ toast('No entries to export for '+periodLabel().toLowerCase()+'.', 'error'); return; }
+  const headers = ['Date','Consultant','Level','Customer','Product','Client Name','Client Number','Case Link','CHS %','PAS %','CES %','Composite','Call Roadmap','Notes'];
+  const rows = entries.map(function(e){
+    const c = consultantById(e.consultantId);
+    const rmChecked = (e.roadmapChecks||[]).filter(Boolean).length;
+    return [ e.date, c?c.name:'', c?c.certLevel:'', e.customerName||'', e.product||'', e.clientName||'', e.clientNumber||'', e.caseLink||'', chsScore(e), pasScore(e), cesScore(e), composite(e), rmChecked+'/'+ROADMAP_ITEMS.length, e.notes||'' ];
+  });
+  const csv = [headers].concat(rows).map(function(r){ return r.map(csvCell).join(','); }).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'hof-qa-report-'+state.period+'-'+todayISO()+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('CSV exported.', 'success');
 }
 
-function renderRoster(rows){
-  const el = document.getElementById("rosterEl");
-  el.innerHTML = rows.map(r => {
-    const pct = Math.round(r.winRate*100);
-    const cls = pct>=25 ? "high" : pct>=12 ? "mid" : "low";
-    return `
-      <tr>
-        <td>${r.name}</td>
-        <td class="num mono">${r.assigned}</td>
-        <td class="num mono">${r.won}</td>
-        <td class="num mono">${r.lost}</td>
-        <td class="num win-rate ${cls}">${pct}%</td>
-        <td><span class="stuck-tag">${r.stuckAt}</span></td>
-      </tr>`;
-  }).join("");
+/* ============ INIT ============ */
+function renderCurrentDate(){
+  document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
 }
+document.getElementById('entryModal').addEventListener('click', function(e){ if(e.target.id==='entryModal') closeEntryModal(); });
+document.getElementById('consultantModal').addEventListener('click', function(e){ if(e.target.id==='consultantModal') closeConsultantModal(); });
+document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeEntryModal(); closeConsultantModal(); } });
 
-function renderLost(deals){
-  const lost = deals.filter(d => d.Status==="Lost").length;
-  document.getElementById("lostCount").textContent = lost;
-  document.getElementById("lostRate").textContent = deals.length ? Math.round(lost/deals.length*100)+"% of total leads" : "";
-}
-
-async function init(){
-  const deals = await loadData();
-  renderFunnel(computeFunnel(deals));
-  renderPrograms(computeByProgram(deals));
-  renderRoster(computeByConsultant(deals));
-  renderLost(deals);
-}
-
-function tickClock(){
-  document.getElementById("clock").textContent = new Date().toLocaleString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', day:'2-digit', month:'short' });
-}
-tickClock(); setInterval(tickClock, 1000);
-document.getElementById("refreshBtn").addEventListener("click", init);
-init();
+document.addEventListener('DOMContentLoaded', function(){
+  renderCurrentDate();
+  loadFromSheets();
+});
 </script>
 </body>
 </html>
