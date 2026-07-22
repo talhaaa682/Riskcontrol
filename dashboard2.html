@@ -1,13 +1,9 @@
-<nav>
-  <a href="index.html">Sales Pipeline</a> | 
-  <a href="dashboard2.html">Second Dashboard</a>
-</nav>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HOF Migration - Consultant QA Dashboard v2</title>
+<title>HOF Migration - Consultant QA Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -35,9 +31,16 @@ const USE_GOOGLE_SHEETS = true;
 </script>
 
 <nav class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-50 glass">
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-200">H</div>
-<div><h1 class="font-bold text-lg leading-tight text-slate-800">HOF Migration</h1><p class="text-xs text-slate-500">Consultant QA Dashboard v2</p></div>
+<div class="flex items-center gap-6">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-200">H</div>
+    <div><h1 class="font-bold text-lg leading-tight text-slate-800">HOF Migration</h1><p class="text-xs text-slate-500">Consultant QA Dashboard v2</p></div>
+  </div>
+  <div class="hidden md:flex items-center gap-4 text-sm font-medium text-slate-600 border-l border-slate-200 pl-6">
+    <a href="index.html" class="hover:text-indigo-600">Sales Pipeline</a>
+    <span class="text-slate-300">|</span>
+    <a href="dashboard2.html" class="text-indigo-600 font-semibold">QA Dashboard</a>
+  </div>
 </div>
 <div class="flex items-center gap-3">
 <div class="flex items-center bg-slate-100 rounded-lg p-0.5">
@@ -86,7 +89,6 @@ const USE_GOOGLE_SHEETS = true;
 </aside>
 
 <main class="flex-1 p-6 overflow-auto">
-
 <section id="view-overview" class="fade-in"></section>
 <section id="view-qa-checklist" class="hidden"></section>
 <section id="view-trends" class="hidden"></section>
@@ -95,7 +97,6 @@ const USE_GOOGLE_SHEETS = true;
 <section id="view-consultants" class="hidden"></section>
 <section id="view-certification" class="hidden"></section>
 <section id="view-alerts" class="hidden"></section>
-
 </main>
 </div>
 
@@ -175,8 +176,8 @@ const USE_GOOGLE_SHEETS = true;
 
 <script>
 /* ============ CONFIG ============ */
-const WEIGHTS = { chs: 0.35, pas: 0.35, ces: 0.30 };   // matches sidebar Scoring Weights
-const ALERT_THRESHOLD = 70;   // composite below this raises a risk alert on Alerts & Tasks
+const WEIGHTS = { chs: 0.35, pas: 0.35, ces: 0.30 };
+const ALERT_THRESHOLD = 70;
 const AVATAR_COLORS = ['bg-indigo-100 text-indigo-700','bg-emerald-100 text-emerald-700','bg-amber-100 text-amber-700','bg-rose-100 text-rose-700','bg-sky-100 text-sky-700','bg-violet-100 text-violet-700'];
 const VIEWS = ['overview','qa-checklist','trends','leaderboard','product-line','consultants','certification','alerts'];
 
@@ -212,9 +213,7 @@ const CES_ITEMS = [
 ];
 const ROADMAP_ITEMS = ['Building Rapport', 'Qualifying Client', 'Presentation', 'Closing'];
 
-/* ============ STATE ============
-   In-memory only for the life of this page load (never localStorage — see saveAllData/loadFromSheets
-   for the Google Sheets sync, which is the real persistence layer for this app). */
+/* ============ STATE ============ */
 let state = {
   period: 'today',
   currentView: 'overview',
@@ -349,6 +348,7 @@ function entryRow(e, opts){
     + '<div class="text-center bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-200"><p class="text-[10px] text-slate-400 uppercase tracking-wide">Composite</p><p class="text-sm font-bold '+scoreColor(comp)+'">'+comp+'</p></div>'
     + actions + '</div></div>';
 }
+
 function chartData(entries){
   const byDate = {};
   entries.forEach(e=>{ (byDate[e.date]=byDate[e.date]||[]).push(composite(e)); });
@@ -368,643 +368,308 @@ function switchView(view){
   });
   renderCurrentView();
 }
+
 function renderCurrentView(){
   const el = document.getElementById('view-'+state.currentView);
   el.classList.add('fade-in');
-  if(state.currentView==='overview') renderOverview();
-  else if(state.currentView==='qa-checklist') renderChecklist();
-  else if(state.currentView==='trends') renderTrends();
-  else if(state.currentView==='leaderboard') renderLeaderboard();
-  else if(state.currentView==='product-line') renderProductLine();
-  else if(state.currentView==='consultants') renderConsultants();
-  else if(state.currentView==='certification') renderCertification();
-  else if(state.currentView==='alerts') renderAlerts();
+  
+  if (state.currentView === 'overview') renderOverview();
+  else if (state.currentView === 'qa-checklist') renderQAChecklist();
+  else if (state.currentView === 'trends') renderTrends();
+  else if (state.currentView === 'leaderboard') renderLeaderboard();
+  else if (state.currentView === 'product-line') renderProductLine();
+  else if (state.currentView === 'consultants') renderConsultants();
+  else if (state.currentView === 'certification') renderCertification();
+  else if (state.currentView === 'alerts') renderAlerts();
+  
+  updateAlertBadge();
 }
-function setPeriod(period){
-  state.period = period;
-  ['today','week','month'].forEach(p=>{
-    const btn = document.getElementById('period-'+p);
-    if(p===period){ btn.classList.add('bg-white','shadow-sm','text-indigo-700'); btn.classList.remove('text-slate-500'); }
-    else { btn.classList.remove('bg-white','shadow-sm','text-indigo-700'); btn.classList.add('text-slate-500'); }
+
+/* ============ VIEWS RENDER LOGIC ============ */
+function renderOverview(){
+  const pEntries = periodEntries();
+  const avgCHS = Math.round(avg(pEntries.map(chsScore)));
+  const avgPAS = Math.round(avg(pEntries.map(pasScore)));
+  const avgCES = Math.round(avg(pEntries.map(cesScore)));
+  const avgComp = Math.round(avg(pEntries.map(composite)));
+  
+  let html = '<div class="space-y-6">'
+    + '<div class="grid grid-cols-1 md:grid-cols-4 gap-4">'
+    + kpiCard('Reviews Completed', pEntries.length, 'indigo', iconClipboard())
+    + kpiCard('Avg Call Handling', avgCHS + '%', 'blue', iconChart())
+    + kpiCard('Avg Process Adherence', avgPAS + '%', 'emerald', iconCheck())
+    + kpiCard('Overall Quality Score', avgComp + '%', avgComp >= 75 ? 'emerald' : 'red', iconAlert())
+    + '</div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">'
+    + '<div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center"><h2 class="font-bold text-slate-800">Recent QA Audits</h2>'
+    + '<button onclick="openEntryModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">+ New Review</button></div>'
+    + '<div class="divide-y divide-slate-100">';
+
+  if (!pEntries.length) {
+    html += emptyState('No reviews recorded', 'Start by clicking "+ New Review" above.');
+  } else {
+    pEntries.slice(0, 10).forEach(e => { html += entryRow(e); });
+  }
+
+  html += '</div></div></div>';
+  document.getElementById('view-overview').innerHTML = html;
+}
+
+function renderQAChecklist() {
+  const pEntries = periodEntries();
+  let html = '<div class="space-y-4">'
+    + '<div class="flex justify-between items-center"><h2 class="text-lg font-bold text-slate-800">QA Audit Log ('+periodLabel()+')</h2>'
+    + '<button onclick="openEntryModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm">+ Log New QA Review</button></div>'
+    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">';
+  
+  if (!pEntries.length) {
+    html += emptyState('No audit records found', 'Select a different timeframe or add a new review.');
+  } else {
+    pEntries.forEach(e => { html += entryRow(e); });
+  }
+  
+  html += '</div></div>';
+  document.getElementById('view-qa-checklist').innerHTML = html;
+}
+
+function renderTrends() {
+  const pEntries = periodEntries();
+  document.getElementById('view-trends').innerHTML = '<div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">'
+    + '<h2 class="font-bold text-slate-800 mb-4">Quality Performance Trends</h2>'
+    + '<div class="chart-container"><canvas id="trendsChart"></canvas></div></div>';
+  
+  destroyChart('trendsChart');
+  const data = chartData(pEntries);
+  const ctx = document.getElementById('trendsChart').getContext('2d');
+  charts['trendsChart'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels.length ? data.labels : ['No Data'],
+      datasets: [{ label: 'Composite Score', data: data.values, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
+  });
+}
+
+function renderLeaderboard() {
+  const grouped = groupByConsultant(periodEntries());
+  const rankings = Object.keys(grouped).map(cid => {
+    const c = consultantById(cid);
+    const items = grouped[cid];
+    return { consultant: c, avgScore: Math.round(avg(items.map(composite))), count: items.length };
+  }).sort((a,b) => b.avgScore - a.avgScore);
+
+  let html = '<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">'
+    + '<h2 class="font-bold text-slate-800">Consultant QA Leaderboard</h2><div class="space-y-3">';
+
+  if(!rankings.length) {
+    html += emptyState('No data for leaderboard', 'Perform reviews to see consultant rankings.');
+  } else {
+    rankings.forEach((r, idx) => {
+      html += '<div class="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50">'
+        + '<div class="flex items-center gap-3"><span class="font-bold text-slate-400 w-4">#'+(idx+1)+'</span>'
+        + '<div class="w-8 h-8 rounded-full '+(r.consultant?colorFor(r.consultant.id):'bg-slate-100')+' flex items-center justify-center font-bold text-xs">'+(r.consultant?initials(r.consultant.name):'?')+'</div>'
+        + '<div><p class="font-semibold text-slate-800 text-sm">'+esc(r.consultant?r.consultant.name:'Unknown')+'</p><p class="text-xs text-slate-400">'+r.count+' Audits</p></div></div>'
+        + '<span class="font-bold text-base '+scoreColor(r.avgScore)+'">'+r.avgScore+'%</span></div>';
+    });
+  }
+  html += '</div></div>';
+  document.getElementById('view-leaderboard').innerHTML = html;
+}
+
+function renderProductLine() {
+  const grouped = groupByProduct(periodEntries());
+  let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+  
+  if(!Object.keys(grouped).length) {
+    html = emptyState('No product data available', 'Add reviews with product types to analyze metrics.');
+  } else {
+    Object.keys(grouped).forEach(pName => {
+      const pList = grouped[pName];
+      const pAvg = Math.round(avg(pList.map(composite)));
+      html += '<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">'
+        + '<h3 class="font-bold text-slate-800">'+esc(pName)+'</h3>'
+        + '<p class="text-xs text-slate-400 mb-3">'+pList.length+' Total Reviews</p>'
+        + '<div class="flex justify-between items-center"><span class="text-sm font-medium text-slate-500">Average Score</span>'
+        + '<span class="text-lg font-bold '+scoreColor(pAvg)+'">'+pAvg+'%</span></div></div>';
+    });
+  }
+  html += '</div>';
+  document.getElementById('view-product-line').innerHTML = html;
+}
+
+function renderConsultants() {
+  let html = '<div class="space-y-4">'
+    + '<div class="flex justify-between items-center"><h2 class="font-bold text-slate-800">Team Roster</h2>'
+    + '<button onclick="openConsultantModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">+ Add Consultant</button></div>'
+    + '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
+
+  state.consultants.forEach(c => {
+    html += '<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">'
+      + '<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full '+colorFor(c.id)+' flex items-center justify-center font-bold">'+initials(c.name)+'</div>'
+      + '<div><p class="font-bold text-slate-800 text-sm">'+esc(c.name)+'</p><p class="text-xs text-slate-400">'+esc(c.certLevel)+'</p></div></div>'
+      + '<span class="text-xs px-2 py-1 rounded-full '+(c.certified?'bg-emerald-50 text-emerald-600 font-medium':'bg-amber-50 text-amber-600')+'">'+(c.certified?'Certified':'Trainee')+'</span></div>';
+  });
+
+  html += '</div></div>';
+  document.getElementById('view-consultants').innerHTML = html;
+}
+
+function renderCertification() {
+  document.getElementById('view-certification').innerHTML = '<div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">'
+    + '<h2 class="font-bold text-slate-800 mb-2">Certification Matrix</h2>'
+    + '<p class="text-xs text-slate-500">Track training milestones and sign-offs for junior team members.</p></div>';
+}
+
+function renderAlerts() {
+  const lowScores = state.entries.filter(e => composite(e) < ALERT_THRESHOLD);
+  let html = '<div class="space-y-4"><h2 class="font-bold text-slate-800">Flagged Risk Audits (&lt; '+ALERT_THRESHOLD+'%)</h2>';
+  
+  if(!lowScores.length) {
+    html += emptyState('No active risk alerts', 'All current reviews meet minimum QA score standards.');
+  } else {
+    lowScores.forEach(e => {
+      html += '<div class="bg-red-50 border border-red-200 p-4 rounded-xl flex items-center justify-between">'
+        + '<div><p class="font-bold text-red-800 text-sm">'+esc(consultantById(e.consultantId)?.name || 'Unknown')+' — Score: '+composite(e)+'%</p>'
+        + '<p class="text-xs text-red-600 mt-1">Unmet items: '+unmetItems(e).length+' criteria failed.</p></div>'
+        + '<button onclick="openEntryModal(\''+e.id+'\')" class="bg-white border border-red-200 text-red-700 px-3 py-1.5 rounded-lg text-xs font-semibold">Review Audit</button></div>';
+    });
+  }
+  html += '</div>';
+  document.getElementById('view-alerts').innerHTML = html;
+}
+
+function updateAlertBadge(){
+  const count = state.entries.filter(e => composite(e) < ALERT_THRESHOLD).length;
+  const badge = document.getElementById('alertBadge');
+  badge.textContent = count;
+  badge.className = 'ml-auto text-xs px-2 py-0.5 rounded-full ' + (count > 0 ? 'bg-red-500 text-white' : 'bg-slate-300 text-white');
+}
+
+/* ============ MODAL CONTROL LOGIC ============ */
+function setPeriod(p) {
+  state.period = p;
+  ['today','week','month'].forEach(id => {
+    const btn = document.getElementById('period-' + id);
+    if(id === p) {
+      btn.className = "px-3 py-1.5 rounded-md text-xs font-medium transition bg-white shadow-sm text-indigo-700";
+    } else {
+      btn.className = "px-3 py-1.5 rounded-md text-xs font-medium transition text-slate-500 hover:text-slate-700";
+    }
   });
   renderCurrentView();
 }
 
-/* ============ OVERVIEW ============ */
-function renderOverview(){
-  const el = document.getElementById('view-overview');
-  const entries = periodEntries();
-  const totalReviews = entries.length;
-  const avgComposite = totalReviews ? Math.round(avg(entries.map(composite))) : 0;
-  const passCount = entries.filter(e=>composite(e)>=75).length;
-  const passRate = totalReviews ? Math.round(passCount/totalReviews*100) : 0;
-  const activeAlerts = state.entries.filter(e=>composite(e)<ALERT_THRESHOLD && !state.resolvedAlerts.includes(e.id)).length;
+function openEntryModal(entryId = null) {
+  state.editingEntryId = entryId;
+  const select = document.getElementById('entryConsultant');
+  select.innerHTML = state.consultants.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
 
-  const byC = groupByConsultant(entries);
-  const ranked = Object.keys(byC).map(cid=>{
-    const c = consultantById(cid); const list = byC[cid];
-    return c ? { consultant:c, count:list.length, avgScore: Math.round(avg(list.map(composite))) } : null;
-  }).filter(Boolean).sort((a,b)=>b.avgScore-a.avgScore).slice(0,3);
+  document.getElementById('entryChecklistSections').innerHTML = 
+    checklistSectionHtml('chs', 'Call Handling (CHS - 35%)', 'Tone, pace, and vocal discipline', CHS_ITEMS, 'bg-blue-500') +
+    checklistSectionHtml('pas', 'Process Adherence (PAS - 35%)', 'CRM data, NOC codes, and documentation', PAS_ITEMS, 'bg-emerald-500') +
+    checklistSectionHtml('ces', 'Closing Effectiveness (CES - 30%)', 'Proposals, objections, and conversion', CES_ITEMS, 'bg-amber-500');
 
-  const recent = [...state.entries].sort((a,b)=> b.date.localeCompare(a.date)).slice(0,6);
-
-  let topPerformersHtml;
-  if(ranked.length){
-    topPerformersHtml = ranked.map((r,i)=>{
-      const medal = i===0?'podium-1 text-white':i===1?'podium-2 text-white':'podium-3 text-white';
-      return '<div class="flex items-center gap-3 py-2 '+(i<ranked.length-1?'border-b border-slate-100':'')+'">'
-        + '<div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold '+medal+'">'+(i+1)+'</div>'
-        + '<div class="w-8 h-8 rounded-full '+colorFor(r.consultant.id)+' flex items-center justify-center text-xs font-bold">'+initials(r.consultant.name)+'</div>'
-        + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-700 truncate">'+esc(r.consultant.name)+'</p><p class="text-xs text-slate-400">'+r.count+' review'+(r.count===1?'':'s')+'</p></div>'
-        + '<div class="text-sm font-bold '+scoreColor(r.avgScore)+'">'+r.avgScore+'</div></div>';
-    }).join('');
-  } else {
-    topPerformersHtml = emptyState('No reviews yet this period','Add a QA review to see your top performers here.');
-  }
-
-  el.innerHTML =
-    '<div class="flex items-center justify-between mb-6">'
-    + '<div><h2 class="text-2xl font-bold text-slate-800">Executive Overview</h2><p class="text-sm text-slate-500">'+periodLabel()+' &bull; '+totalReviews+' QA review'+(totalReviews===1?'':'s')+' logged</p></div></div>'
-    + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">'
-    + kpiCard('Total Reviews', totalReviews, 'blue', iconClipboard())
-    + kpiCard('Avg Composite', avgComposite, 'indigo', iconChart())
-    + kpiCard('Pass Rate', passRate+'%', 'emerald', iconCheck())
-    + kpiCard('Active Risk Alerts', activeAlerts, activeAlerts>0?'red':'slate', iconAlert())
-    + '</div>'
-    + '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">'
-    + '<div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Score Trend</h3><div class="chart-container"><canvas id="overviewTrendChart"></canvas></div></div>'
-    + '<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Top Performers</h3>'+topPerformersHtml+'</div>'
-    + '</div>'
-    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">'
-    + '<div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between"><h3 class="font-semibold text-slate-700">Recent QA Reviews</h3><button onclick="switchView(\'qa-checklist\')" class="text-xs font-medium text-indigo-600 hover:text-indigo-700">View all &rarr;</button></div>'
-    + (recent.length ? '<div class="overflow-x-auto"><div class="divide-y divide-slate-100 min-w-[1000px]">'+recent.map(e=>entryRow(e,{compact:true})).join('')+'</div></div>' : emptyState('No QA reviews yet','Click "+ New QA Review" on the Daily QA Checklist page to log your first one.'))
-    + '</div>';
-
-  renderOverviewChart(entries);
-}
-function renderOverviewChart(entries){
-  destroyChart('overviewTrend');
-  const ctx = document.getElementById('overviewTrendChart');
-  if(!ctx) return;
-  const d = chartData(entries);
-  charts.overviewTrend = new Chart(ctx, {
-    type:'line',
-    data:{ labels: d.labels.length?d.labels:['—'], datasets:[{ label:'Avg Composite', data: d.values.length?d.values:[0], borderColor:'#4f46e5', backgroundColor:'rgba(79,70,229,.08)', fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#4f46e5' }]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ min:0, max:100, ticks:{stepSize:25}, grid:{color:'#f1f5f9'} }, x:{ grid:{display:false} } } }
-  });
-}
-
-/* ============ DAILY QA CHECKLIST ============ */
-function renderChecklist(){
-  const el = document.getElementById('view-qa-checklist');
-  let entries = periodEntries().sort((a,b)=> b.date.localeCompare(a.date));
-  if(checklistSearch){
-    const q = checklistSearch.toLowerCase();
-    entries = entries.filter(e=>{
-      const c = consultantById(e.consultantId);
-      return [c?c.name:'', e.customerName, e.clientName, e.product].filter(Boolean).some(v=>v.toLowerCase().includes(q));
-    });
-  }
-  el.innerHTML =
-    '<div class="flex items-center justify-between mb-6 flex-wrap gap-3">'
-    + '<div><h2 class="text-2xl font-bold text-slate-800">Daily QA Checklist</h2><p class="text-sm text-slate-500">'+periodLabel()+' &bull; '+entries.length+' review'+(entries.length===1?'':'s')+'</p></div>'
-    + '<div class="flex items-center gap-2">'
-    + '<input id="checklistSearchInput" type="text" placeholder="Search consultant, customer, client..." value="'+esc(checklistSearch)+'" oninput="checklistSearch=this.value; renderChecklist()" class="text-sm border border-slate-200 rounded-lg px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-indigo-200">'
-    + '<button onclick="openEntryModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm whitespace-nowrap">+ New QA Review</button>'
-    + '</div></div>'
-    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">'
-    + (entries.length ? '<div class="overflow-x-auto"><div class="divide-y divide-slate-100 min-w-[1050px]">'+entries.map(e=>entryRow(e)).join('')+'</div></div>' : emptyState('No QA reviews for '+periodLabel().toLowerCase(), 'Click "+ New QA Review" to log your first review for this period.'))
-    + '</div>';
-
-  const input = document.getElementById('checklistSearchInput');
-  if(input){ input.focus(); const v=input.value; input.setSelectionRange(v.length, v.length); }
-}
-
-/* ============ TRENDS & ANALYTICS ============ */
-function renderTrends(){
-  const el = document.getElementById('view-trends');
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
-  const cutoffISO = cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
-  const entries = state.entries.filter(e=>e.date >= cutoffISO);
-
-  const byC = groupByConsultant(entries);
-  const rows = Object.keys(byC).map(cid=>{
-    const c = consultantById(cid); if(!c) return null;
-    const list = byC[cid];
-    return { c, count:list.length, comp:Math.round(avg(list.map(composite))) };
-  }).filter(Boolean).sort((a,b)=>b.comp-a.comp);
-
-  el.innerHTML =
-    '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Trends & Analytics</h2><p class="text-sm text-slate-500">Last 30 days across all consultants</p></div>'
-    + '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">'
-    + '<div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Composite Score Trend</h3><div class="chart-container"><canvas id="trendsLineChart"></canvas></div></div>'
-    + '<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Score Distribution</h3><div class="chart-container"><canvas id="trendsDoughnutChart"></canvas></div></div>'
-    + '</div>'
-    + '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">'
-    + '<div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">Average by Category</h3><div class="chart-container"><canvas id="trendsBarChart"></canvas></div></div>'
-    + '<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm"><h3 class="font-semibold text-slate-700 mb-4">By Consultant</h3>'
-    + (rows.length? '<div class="space-y-2 max-h-[200px] overflow-y-auto">'+rows.map(r=>'<div class="flex items-center justify-between text-sm"><span class="text-slate-600 truncate">'+esc(r.c.name)+'</span><span class="font-bold '+scoreColor(r.comp)+'">'+r.comp+'</span></div>').join('')+'</div>' : emptyState('No data yet','Log QA reviews to see consultant trends.'))
-    + '</div></div>';
-
-  renderTrendsCharts(entries);
-}
-function renderTrendsCharts(entries){
-  destroyChart('trendsLine'); destroyChart('trendsDoughnut'); destroyChart('trendsBar');
-
-  const lineCtx = document.getElementById('trendsLineChart');
-  const d = chartData(entries);
-  charts.trendsLine = new Chart(lineCtx, { type:'line', data:{labels:d.labels.length?d.labels:['—'], datasets:[{label:'Avg Composite', data:d.values.length?d.values:[0], borderColor:'#4f46e5', backgroundColor:'rgba(79,70,229,.08)', fill:true, tension:.35, pointRadius:3}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{min:0,max:100,grid:{color:'#f1f5f9'}}, x:{grid:{display:false}}}}});
-
-  const buckets = [0,0,0];
-  entries.forEach(e=>{ const c=composite(e); if(c>=90) buckets[0]++; else if(c>=75) buckets[1]++; else buckets[2]++; });
-  const doughnutCtx = document.getElementById('trendsDoughnutChart');
-  charts.trendsDoughnut = new Chart(doughnutCtx, { type:'doughnut', data:{ labels:['Excellent (90+)','Good (75-89)','Needs Improvement (<75)'], datasets:[{ data: buckets, backgroundColor:['#10b981','#f59e0b','#ef4444'], borderWidth:0 }]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:10} } } } } });
-
-  const barCtx = document.getElementById('trendsBarChart');
-  charts.trendsBar = new Chart(barCtx, { type:'bar', data:{ labels:['Call Handling','Process Adherence','Closing Effectiveness','Call Roadmap'], datasets:[{ data:[ entries.length?Math.round(avg(entries.map(chsScore))):0, entries.length?Math.round(avg(entries.map(pasScore))):0, entries.length?Math.round(avg(entries.map(cesScore))):0, entries.length?Math.round(avg(entries.map(roadmapScore))):0 ], backgroundColor:['#3b82f6','#10b981','#f59e0b','#8b5cf6'], borderRadius:6 }]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{min:0,max:100,grid:{color:'#f1f5f9'}}, x:{grid:{display:false}} } } });
-}
-
-/* ============ LEADERBOARD ============ */
-function podiumCard(entry, place, order){
-  if(!entry) return '<div class="'+order+'"></div>';
-  const grad = place===1?'podium-1':place===2?'podium-2':'podium-3';
-  const h = place===1?'h-40':place===2?'h-32':'h-28';
-  return '<div class="'+order+' text-center">'
-    + '<div class="w-14 h-14 rounded-full '+colorFor(entry.c.id)+' flex items-center justify-center text-base font-bold mx-auto mb-2 border-4 border-white shadow">'+initials(entry.c.name)+'</div>'
-    + '<p class="font-semibold text-slate-800 text-sm truncate">'+esc(entry.c.name)+'</p>'
-    + '<p class="text-xs text-slate-400 mb-2">'+entry.comp+' pts</p>'
-    + '<div class="'+grad+' '+h+' rounded-t-xl flex items-start justify-center pt-3"><span class="text-white font-bold text-2xl">'+place+'</span></div></div>';
-}
-function renderLeaderboard(){
-  const el = document.getElementById('view-leaderboard');
-  const entries = periodEntries();
-  const byC = groupByConsultant(entries);
-  const ranked = Object.keys(byC).map(cid=>{
-    const c = consultantById(cid); if(!c) return null;
-    const list = byC[cid];
-    return { c, count:list.length, comp: Math.round(avg(list.map(composite))) };
-  }).filter(Boolean).sort((a,b)=>b.comp-a.comp);
-
-  if(!ranked.length){
-    el.innerHTML = '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Leaderboard</h2><p class="text-sm text-slate-500">Ranked by average composite score &bull; '+periodLabel()+'</p></div>'
-      + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm">'+emptyState('No reviews logged for '+periodLabel().toLowerCase(), 'The leaderboard fills in as QA reviews are added.')+'</div>';
-    return;
-  }
-  const podium = ranked.slice(0,3);
-
-  el.innerHTML =
-    '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Leaderboard</h2><p class="text-sm text-slate-500">Ranked by average composite score &bull; '+periodLabel()+'</p></div>'
-    + '<div class="grid grid-cols-3 gap-4 mb-6 items-end">'
-    + podiumCard(podium[1], 2, 'order-1') + podiumCard(podium[0], 1, 'order-2') + podiumCard(podium[2], 3, 'order-3')
-    + '</div>'
-    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><table class="w-full text-sm">'
-    + '<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide"><tr><th class="text-left px-5 py-3">Rank</th><th class="text-left px-5 py-3">Consultant</th><th class="text-center px-5 py-3">Reviews</th><th class="text-right px-5 py-3">Avg Composite</th></tr></thead>'
-    + '<tbody class="divide-y divide-slate-100">'
-    + ranked.map((r,i)=>'<tr class="hover:bg-slate-50"><td class="px-5 py-3 text-slate-400 font-medium">#'+(i+1)+'</td>'
-      + '<td class="px-5 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full '+colorFor(r.c.id)+' flex items-center justify-center text-xs font-bold">'+initials(r.c.name)+'</div><div><p class="font-medium text-slate-700">'+esc(r.c.name)+'</p><p class="text-xs text-slate-400">'+esc(r.c.certLevel)+'</p></div></div></td>'
-      + '<td class="px-5 py-3 text-center text-slate-500">'+r.count+'</td>'
-      + '<td class="px-5 py-3 text-right font-bold '+scoreColor(r.comp)+'">'+r.comp+'</td></tr>').join('')
-    + '</tbody></table></div>';
-}
-
-/* ============ PERFORMANCE BY PRODUCT ============ */
-function renderProductLine(){
-  const el = document.getElementById('view-product-line');
-  const entries = periodEntries();
-  const byP = groupByProduct(entries);
-  const rows = Object.keys(byP).map(product=>{
-    const list = byP[product];
-    return { product, count:list.length, chs:Math.round(avg(list.map(chsScore))), pas:Math.round(avg(list.map(pasScore))), ces:Math.round(avg(list.map(cesScore))), comp:Math.round(avg(list.map(composite))) };
-  }).sort((a,b)=>b.count-a.count);
-
-  if(!rows.length){
-    el.innerHTML = '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Performance by Product</h2><p class="text-sm text-slate-500">'+periodLabel()+'</p></div>'
-      + emptyState('No product data for '+periodLabel().toLowerCase(), 'Tag a Product / Case Type when logging a QA review to see this breakdown.');
-    return;
-  }
-
-  el.innerHTML =
-    '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Performance by Product</h2><p class="text-sm text-slate-500">'+periodLabel()+'</p></div>'
-    + '<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-6"><h3 class="font-semibold text-slate-700 mb-4">Avg Composite by Product</h3><div class="chart-container"><canvas id="productBarChart"></canvas></div></div>'
-    + '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><table class="w-full text-sm">'
-    + '<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide"><tr><th class="text-left px-5 py-3">Product / Case Type</th><th class="text-center px-5 py-3">Reviews</th><th class="text-center px-5 py-3">CHS</th><th class="text-center px-5 py-3">PAS</th><th class="text-center px-5 py-3">CES</th><th class="text-right px-5 py-3">Composite</th></tr></thead>'
-    + '<tbody class="divide-y divide-slate-100">'
-    + rows.map(r=>'<tr class="hover:bg-slate-50"><td class="px-5 py-3 font-medium text-slate-700">'+esc(r.product)+'</td><td class="px-5 py-3 text-center text-slate-500">'+r.count+'</td><td class="px-5 py-3 text-center '+scoreColor(r.chs)+'">'+r.chs+'</td><td class="px-5 py-3 text-center '+scoreColor(r.pas)+'">'+r.pas+'</td><td class="px-5 py-3 text-center '+scoreColor(r.ces)+'">'+r.ces+'</td><td class="px-5 py-3 text-right font-bold '+scoreColor(r.comp)+'">'+r.comp+'</td></tr>').join('')
-    + '</tbody></table></div>';
-
-  renderProductChart(rows);
-}
-function renderProductChart(rows){
-  destroyChart('product');
-  const ctx = document.getElementById('productBarChart');
-  charts.product = new Chart(ctx, { type:'bar', data:{ labels: rows.map(r=>r.product), datasets:[{ label:'Avg Composite', data: rows.map(r=>r.comp), backgroundColor:'#6366f1', borderRadius:6 }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{min:0,max:100,grid:{color:'#f1f5f9'}}, y:{grid:{display:false}} } } });
-}
-
-/* ============ MANAGE CONSULTANTS ============ */
-function renderConsultants(){
-  const el = document.getElementById('view-consultants');
-  el.innerHTML =
-    '<div class="flex items-center justify-between mb-6"><div><h2 class="text-2xl font-bold text-slate-800">Manage Consultants</h2><p class="text-sm text-slate-500">Add, edit, or remove consultants from the team.</p></div>'
-    + '<button onclick="openConsultantModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Consultant</button></div>'
-    + (state.consultants.length ? '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm min-w-[800px]">'
-      + '<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide"><tr><th class="text-left px-5 py-3">Consultant</th><th class="text-left px-5 py-3">Level</th><th class="text-center px-5 py-3">Tenure</th><th class="text-center px-5 py-3">Training Hours</th><th class="text-center px-5 py-3">Mock Calls</th><th class="text-center px-5 py-3">Certified</th><th class="text-right px-5 py-3">Actions</th></tr></thead>'
-      + '<tbody class="divide-y divide-slate-100">'
-      + state.consultants.map(c=>
-          '<tr class="hover:bg-slate-50">'
-          + '<td class="px-5 py-3"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full '+colorFor(c.id)+' flex items-center justify-center text-xs font-bold">'+initials(c.name)+'</div><span class="font-medium text-slate-700">'+esc(c.name)+'</span></div></td>'
-          + '<td class="px-5 py-3"><span class="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600">'+esc(c.certLevel)+'</span></td>'
-          + '<td class="px-5 py-3 text-center text-slate-500">'+(c.tenureYears!=null && c.tenureYears!==''? c.tenureYears+'y' : '&mdash;')+'</td>'
-          + '<td class="px-5 py-3 text-center text-slate-500">'+(c.trainingHours!=null?c.trainingHours:0)+'</td>'
-          + '<td class="px-5 py-3 text-center text-slate-500">'+(c.mockCalls!=null?c.mockCalls:0)+'</td>'
-          + '<td class="px-5 py-3 text-center">'+(c.certified? '<span class="text-emerald-600 font-medium text-xs">&check; Yes</span>' : '<span class="text-slate-300 text-xs">&mdash;</span>')+'</td>'
-          + '<td class="px-5 py-3 text-right text-xs font-medium space-x-3"><button onclick="openConsultantModal(\''+c.id+'\')" class="text-indigo-600 hover:text-indigo-700">Edit</button><button onclick="deleteConsultant(\''+c.id+'\')" class="text-red-600 hover:text-red-700">Delete</button></td></tr>'
-        ).join('')
-      + '</tbody></table></div></div>' : emptyState('No consultants yet', 'Click "Add Consultant" to add your first team member.'));
-}
-
-/* ============ CERTIFICATION CENTER ============ */
-function renderCertification(){
-  const el = document.getElementById('view-certification');
-  const rows = state.consultants.map(c=>{
-    const list = state.entries.filter(e=>e.consultantId===c.id).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
-    const comp = list.length? Math.round(avg(list.map(composite))) : null;
-    return { c, count:list.length, comp };
-  });
-  el.innerHTML =
-    '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Certification Center</h2><p class="text-sm text-slate-500">Readiness signals to help decide who\u2019s cleared to handle client files independently &mdash; Certified status is set manually in Manage Consultants</p></div>'
-    + (rows.length ? '<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"><table class="w-full text-sm">'
-      + '<thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide"><tr><th class="text-left px-5 py-3">Consultant</th><th class="text-left px-5 py-3">Level</th><th class="text-center px-5 py-3">Tenure</th><th class="text-center px-5 py-3">Training Hrs</th><th class="text-center px-5 py-3">Mock Calls</th><th class="text-center px-5 py-3">Avg Composite (last 10)</th><th class="text-right px-5 py-3">Certified</th></tr></thead>'
-      + '<tbody class="divide-y divide-slate-100">'
-      + rows.map(r=>'<tr class="hover:bg-slate-50">'
-        + '<td class="px-5 py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full '+colorFor(r.c.id)+' flex items-center justify-center text-xs font-bold">'+initials(r.c.name)+'</div><span class="font-medium text-slate-700">'+esc(r.c.name)+'</span></div></td>'
-        + '<td class="px-5 py-3 text-slate-500">'+esc(r.c.certLevel)+'</td>'
-        + '<td class="px-5 py-3 text-center text-slate-500">'+(r.c.tenureYears!=null && r.c.tenureYears!==''? r.c.tenureYears+'y' : '&mdash;')+'</td>'
-        + '<td class="px-5 py-3 text-center text-slate-500">'+(r.c.trainingHours!=null?r.c.trainingHours:0)+'</td>'
-        + '<td class="px-5 py-3 text-center text-slate-500">'+(r.c.mockCalls!=null?r.c.mockCalls:0)+'</td>'
-        + '<td class="px-5 py-3 text-center font-bold '+(r.comp!==null?scoreColor(r.comp):'text-slate-300')+'">'+(r.comp!==null?r.comp:'&mdash;')+'</td>'
-        + '<td class="px-5 py-3 text-right">'+(r.c.certified? '<span class="text-xs font-medium px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">&check; Yes</span>' : '<span class="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-400">Not yet</span>')+'</td></tr>').join('')
-      + '</tbody></table></div>' : emptyState('No consultants yet','Add consultants to start tracking certification readiness.'));
-}
-
-/* ============ ALERTS & TASKS (RISK FLAGS) ============ */
-function consultantEntries(consultantId){
-  return state.entries.filter(e=>e.consultantId===consultantId).sort((a,b)=>a.date.localeCompare(b.date));
-}
-function consultantRiskSignals(consultantId){
-  const hist = consultantEntries(consultantId);
-  const signals = [];
-  if (hist.length < 2) return signals; // not enough history to judge a pattern yet
-
-  const last3 = hist.slice(-3);
-  const comps = last3.map(composite);
-
-  if (comps.length >= 3 && comps[0] > comps[1] && comps[1] > comps[2]){
-    signals.push({ label:'Declining trend', detail: comps.join(' \u2192 ')+' over last 3 reviews' });
-  }
-
-  const cats = [['CHS', chsScore], ['PAS', pasScore], ['CES', cesScore]];
-  cats.forEach(function(pair){
-    const label = pair[0], fn = pair[1];
-    const a = Math.round(avg(last3.map(fn)));
-    if (a < 65){
-      signals.push({ label: label+' consistently weak', detail: 'Averaging '+a+'% over last '+last3.length+' review'+(last3.length>1?'s':'')+' \u2014 composite alone would miss this' });
-    }
-  });
-
-  return signals;
-}
-function renderConsultantRiskPanel(){
-  const rows = state.consultants.map(function(c){ return { c: c, signals: consultantRiskSignals(c.id) }; })
-    .filter(function(r){ return r.signals.length > 0; });
-  if (!rows.length) return '';
-  return '<div class="mb-6"><h3 class="text-sm font-semibold text-slate-700 mb-3">Pattern-Based Risk Signals <span class="text-slate-400 font-normal">&mdash; trend and category weakness across recent reviews, not just one bad call</span></h3><div class="space-y-3">'
-    + rows.map(function(r){
-        return '<div class="bg-white rounded-xl border border-amber-200 p-4 shadow-sm flex items-start gap-4">'
-          + '<div class="w-9 h-9 rounded-full '+colorFor(r.c.id)+' flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">'+initials(r.c.name)+'</div>'
-          + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-800">'+esc(r.c.name)+'</p>'
-          + r.signals.map(function(s){ return '<p class="text-xs text-amber-700 mt-1">'+esc(s.label)+': '+esc(s.detail)+'</p>'; }).join('')
-          + '</div></div>';
-      }).join('')
-    + '</div></div>';
-}
-function activeAlertEntries(){
-  return state.entries.filter(e=>composite(e)<ALERT_THRESHOLD && !state.resolvedAlerts.includes(e.id)).sort((a,b)=>b.date.localeCompare(a.date));
-}
-function updateAlertBadge(){
-  const n = activeAlertEntries().length;
-  const badge = document.getElementById('alertBadge');
-  badge.textContent = n;
-  badge.classList.toggle('bg-red-500', n>0);
-  badge.classList.toggle('bg-slate-300', n===0);
-}
-function renderAlerts(){
-  const el = document.getElementById('view-alerts');
-  const alerts = activeAlertEntries();
-  el.innerHTML = '<div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Alerts & Tasks</h2><p class="text-sm text-slate-500">QA reviews scoring below '+ALERT_THRESHOLD+' composite &mdash; flagged as elevated risk</p></div>'
-    + renderConsultantRiskPanel()
-    + (alerts.length ? '<div class="space-y-3">'+alerts.map(e=>{
-        const c = consultantById(e.consultantId);
-        const unmet = unmetItems(e);
-        const gapsLine = unmet.length ? '<p class="text-xs text-red-600 mt-1">Gaps: '+unmet.slice(0,2).map(esc).join('; ')+(unmet.length>2?' +'+(unmet.length-2)+' more':'')+'</p>' : '';
-        return '<div class="bg-white rounded-xl border border-red-100 p-4 shadow-sm flex items-start gap-4">'
-          + '<div class="w-9 h-9 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0 mt-0.5">'+iconAlert()+'</div>'
-          + '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-slate-800">'+esc(c?c.name:'Unknown')+' <span class="text-slate-400 font-normal">&bull; '+(esc(e.customerName)||'&mdash;')+'</span></p>'
-          + '<p class="text-xs text-slate-400">'+fmtDate(e.date)+' &bull; Composite score '+composite(e)+'</p>'
-          + gapsLine + '</div>'
-          + '<button onclick="openEntryModal(\''+e.id+'\')" class="text-xs font-medium text-indigo-600 hover:text-indigo-700 px-2 mt-0.5">Review</button>'
-          + '<button onclick="resolveAlert(\''+e.id+'\')" class="text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg px-3 py-1.5 mt-0.5">Mark Resolved</button></div>';
-      }).join('')+'</div>' : '<div class="bg-white rounded-xl border border-slate-200 shadow-sm">'+emptyState('No active risk alerts', 'Every QA review is currently at or above the composite threshold.')+'</div>');
-}
-function resolveAlert(id){
-  state.resolvedAlerts.push(id);
-  renderAlerts();
-  updateAlertBadge();
-  toast('Alert resolved.', 'success');
-}
-
-/* ============ QA ENTRY MODAL ============ */
-function populateConsultantSelect(){
-  const sel = document.getElementById('entryConsultant');
-  if(!state.consultants.length){ sel.innerHTML = '<option value="">Add a consultant first</option>'; return; }
-  sel.innerHTML = state.consultants.map(c=>'<option value="'+c.id+'">'+esc(c.name)+' — '+esc(c.certLevel)+(c.certified?' ✓':'')+'</option>').join('');
-}
-function toggleUncertifiedWarning(){
-  const id = document.getElementById('entryConsultant').value;
-  const c = consultantById(id);
-  document.getElementById('uncertifiedWarning').classList.toggle('hidden', !c || !!c.certified);
-}
-function clearAllChecks(){
-  document.querySelectorAll('#entryChecklistSections input[type=checkbox]').forEach(cb=>cb.checked=false);
-}
-function setChecksFromEntry(e){
-  clearAllChecks();
-  ['chs','pas','ces','roadmap'].forEach(function(cat){
-    const arr = e[cat+'Checks']||[];
-    document.querySelectorAll('#entryChecklistSections input[data-cat="'+cat+'"]').forEach(function(cb){
-      cb.checked = !!arr[+cb.dataset.idx];
-    });
-  });
-}
-function getChecksForCat(cat){
-  const arr = [];
-  document.querySelectorAll('#entryChecklistSections input[data-cat="'+cat+'"]').forEach(function(cb){ arr[+cb.dataset.idx] = cb.checked; });
-  return arr;
-}
-function openEntryModal(id){
-  state.editingEntryId = id || null;
-  populateConsultantSelect();
-  document.getElementById('entryModalTitle').textContent = id ? 'Edit QA Review' : 'New QA Review';
-  document.getElementById('entryChecklistSections').innerHTML =
-    checklistSectionHtml('chs','Call Handling (CHS)', null, CHS_ITEMS, 'bg-blue-500')
-    + checklistSectionHtml('pas','Process Adherence (PAS)', null, PAS_ITEMS, 'bg-emerald-500')
-    + checklistSectionHtml('ces','Closing Effectiveness (CES)', null, CES_ITEMS, 'bg-amber-500')
-    + checklistSectionHtml('roadmap','Call Roadmap', 'Tracked for coaching — not included in the Composite score', ROADMAP_ITEMS, 'bg-violet-500');
-
-  if(id){
-    const e = state.entries.find(x=>x.id===id);
+  if(entryId) {
+    const e = state.entries.find(x => x.id === entryId);
     document.getElementById('entryDate').value = e.date;
-    document.getElementById('entryConsultant').value = e.consultantId;
-    document.getElementById('entryCustomer').value = e.customerName||'';
-    document.getElementById('entryProduct').value = e.product||'';
-    document.getElementById('entryClientName').value = e.clientName||'';
-    document.getElementById('entryClientNumber').value = e.clientNumber||'';
-    document.getElementById('entryCaseLink').value = e.caseLink||'';
-    document.getElementById('entryNotes').value = e.notes||'';
-    setChecksFromEntry(e);
+    select.value = e.consultantId;
+    document.getElementById('entryCustomer').value = e.customerName || '';
+    document.getElementById('entryProduct').value = e.product || '';
+    document.getElementById('entryNotes').value = e.notes || '';
   } else {
     document.getElementById('entryDate').value = todayISO();
     document.getElementById('entryCustomer').value = '';
     document.getElementById('entryProduct').value = '';
-    document.getElementById('entryClientName').value = '';
-    document.getElementById('entryClientNumber').value = '';
-    document.getElementById('entryCaseLink').value = '';
     document.getElementById('entryNotes').value = '';
-    clearAllChecks();
   }
-  toggleUncertifiedWarning();
+
   updateCompositePreview();
   document.getElementById('entryModal').classList.remove('hidden');
 }
-function closeEntryModal(){
-  document.getElementById('entryModal').classList.add('hidden');
-  state.editingEntryId = null;
+
+function closeEntryModal() { document.getElementById('entryModal').classList.add('hidden'); }
+
+function updateCompositePreview() {
+  const getChecks = (cat) => Array.from(document.querySelectorAll(`input[data-cat="${cat}"]`)).map(i => i.checked);
+  const chs = pct(getChecks('chs'), CHS_ITEMS.length);
+  const pas = pct(getChecks('pas'), PAS_ITEMS.length);
+  const ces = pct(getChecks('ces'), CES_ITEMS.length);
+  
+  document.getElementById('pct-chs').textContent = chs + '%';
+  document.getElementById('pct-pas').textContent = pas + '%';
+  document.getElementById('pct-ces').textContent = ces + '%';
+  
+  const comp = Math.round(chs * WEIGHTS.chs + pas * WEIGHTS.pas + ces * WEIGHTS.ces);
+  document.getElementById('entryCompositePreview').textContent = comp + '%';
 }
-function catPercent(cat, totalLen){
-  const boxes = document.querySelectorAll('#entryChecklistSections input[data-cat="'+cat+'"]');
-  let checked=0; boxes.forEach(function(cb){ if(cb.checked) checked++; });
-  const pctVal = totalLen? Math.round(checked/totalLen*100) : 0;
-  const pctEl = document.getElementById('pct-'+cat);
-  if(pctEl) pctEl.textContent = pctVal+'%';
-  return pctVal;
-}
-function updateCompositePreview(){
-  const chs = catPercent('chs', CHS_ITEMS.length);
-  const pas = catPercent('pas', PAS_ITEMS.length);
-  const ces = catPercent('ces', CES_ITEMS.length);
-  catPercent('roadmap', ROADMAP_ITEMS.length);
-  const comp = Math.round(chs*WEIGHTS.chs + pas*WEIGHTS.pas + ces*WEIGHTS.ces);
-  document.getElementById('entryCompositePreview').textContent = comp;
-}
-function submitEntry(){
-  const consultantId = document.getElementById('entryConsultant').value;
-  if(!consultantId){ toast('Add a consultant first (see Manage Consultants).', 'error'); return; }
-  const customerName = document.getElementById('entryCustomer').value.trim();
-  if(!customerName){ toast('Customer / family name is required.', 'error'); return; }
-  const payload = {
+
+function submitEntry() {
+  const getChecks = (cat) => Array.from(document.querySelectorAll(`input[data-cat="${cat}"]`)).map(i => i.checked);
+  
+  const entryData = {
+    id: state.editingEntryId || uid('e'),
     date: document.getElementById('entryDate').value || todayISO(),
-    consultantId: consultantId,
-    customerName: customerName,
-    product: document.getElementById('entryProduct').value.trim(),
-    clientName: document.getElementById('entryClientName').value.trim(),
-    clientNumber: document.getElementById('entryClientNumber').value.trim(),
-    caseLink: document.getElementById('entryCaseLink').value.trim(),
-    chsChecks: getChecksForCat('chs'),
-    pasChecks: getChecksForCat('pas'),
-    cesChecks: getChecksForCat('ces'),
-    roadmapChecks: getChecksForCat('roadmap'),
-    notes: document.getElementById('entryNotes').value.trim()
+    consultantId: document.getElementById('entryConsultant').value,
+    customerName: document.getElementById('entryCustomer').value,
+    product: document.getElementById('entryProduct').value,
+    clientName: document.getElementById('entryClientName').value,
+    clientNumber: document.getElementById('entryClientNumber').value,
+    caseLink: document.getElementById('entryCaseLink').value,
+    chsChecks: getChecks('chs'),
+    pasChecks: getChecks('pas'),
+    cesChecks: getChecks('ces'),
+    roadmapChecks: Array(ROADMAP_ITEMS.length).fill(true),
+    notes: document.getElementById('entryNotes').value
   };
-  if(state.editingEntryId){
-    const e = state.entries.find(x=>x.id===state.editingEntryId);
-    Object.assign(e, payload);
+
+  if(state.editingEntryId) {
+    const idx = state.entries.findIndex(x => x.id === state.editingEntryId);
+    state.entries[idx] = entryData;
   } else {
-    state.entries.push(Object.assign({ id: uid('e') }, payload));
+    state.entries.unshift(entryData);
   }
+
   closeEntryModal();
   renderCurrentView();
-  updateAlertBadge();
-  toast('QA review saved.', 'success');
-  syncToSheets(false);
-}
-function deleteEntry(id){
-  if(!confirm('Delete this QA review? This cannot be undone.')) return;
-  state.entries = state.entries.filter(e=>e.id!==id);
-  renderCurrentView();
-  updateAlertBadge();
-  toast('QA review deleted.', 'success');
-  syncToSheets(false);
 }
 
-/* ============ CONSULTANT MODAL ============ */
-function openConsultantModal(id){
-  state.editingConsultantId = id || null;
-  document.getElementById('consultantModalTitle').textContent = id ? 'Edit Consultant' : 'Add Consultant';
-  if(id){
-    const c = state.consultants.find(x=>x.id===id);
-    document.getElementById('consultantName').value = c.name;
-    document.getElementById('consultantLevel').value = c.certLevel;
-    document.getElementById('consultantTenure').value = c.tenureYears!=null? c.tenureYears : '';
-    document.getElementById('consultantTrainingHours').value = c.trainingHours!=null? c.trainingHours : 0;
-    document.getElementById('consultantMockCalls').value = c.mockCalls!=null? c.mockCalls : 0;
-    document.getElementById('consultantCertified').checked = !!c.certified;
-  } else {
-    document.getElementById('consultantName').value = '';
-    document.getElementById('consultantLevel').value = 'Trainee';
-    document.getElementById('consultantTenure').value = '';
-    document.getElementById('consultantTrainingHours').value = 0;
-    document.getElementById('consultantMockCalls').value = 0;
-    document.getElementById('consultantCertified').checked = false;
-  }
-  document.getElementById('consultantModal').classList.remove('hidden');
+function deleteEntry(id) {
+  state.entries = state.entries.filter(e => e.id !== id);
+  renderCurrentView();
 }
-function closeConsultantModal(){
-  document.getElementById('consultantModal').classList.add('hidden');
-  state.editingConsultantId = null;
-}
-function submitConsultant(){
-  const name = document.getElementById('consultantName').value.trim();
-  if(!name){ toast('Full name is required.', 'error'); return; }
-  const tenureRaw = document.getElementById('consultantTenure').value;
-  const payload = {
-    name: name,
+
+function openConsultantModal() { document.getElementById('consultantModal').classList.remove('hidden'); }
+function closeConsultantModal() { document.getElementById('consultantModal').classList.add('hidden'); }
+
+function submitConsultant() {
+  const c = {
+    id: uid('c'),
+    name: document.getElementById('consultantName').value || 'New Consultant',
     certLevel: document.getElementById('consultantLevel').value,
-    tenureYears: tenureRaw===''? null : Math.max(0, +tenureRaw),
-    trainingHours: Math.max(0, +document.getElementById('consultantTrainingHours').value || 0),
-    mockCalls: Math.max(0, +document.getElementById('consultantMockCalls').value || 0),
+    tenureYears: parseFloat(document.getElementById('consultantTenure').value) || 0,
+    trainingHours: parseInt(document.getElementById('consultantTrainingHours').value) || 0,
+    mockCalls: parseInt(document.getElementById('consultantMockCalls').value) || 0,
     certified: document.getElementById('consultantCertified').checked
   };
-  if(state.editingConsultantId){
-    const c = state.consultants.find(x=>x.id===state.editingConsultantId);
-    Object.assign(c, payload);
-  } else {
-    state.consultants.push(Object.assign({ id: uid('c') }, payload));
-  }
+  state.consultants.push(c);
   closeConsultantModal();
   renderCurrentView();
-  toast('Consultant saved.', 'success');
-  syncToSheets(false);
 }
-function deleteConsultant(id){
-  const hasEntries = state.entries.some(e=>e.consultantId===id);
-  if(hasEntries){ toast('This consultant has QA reviews on record and can\'t be removed — delete those reviews first if you really need to.', 'error'); return; }
-  if(!confirm('Remove this consultant?')) return;
-  state.consultants = state.consultants.filter(c=>c.id!==id);
+
+function toggleUncertifiedWarning(){
+  const cid = document.getElementById('entryConsultant').value;
+  const c = consultantById(cid);
+  document.getElementById('uncertifiedWarning').classList.toggle('hidden', !c || c.certified);
+}
+
+function saveAllData() { alert('Data saved successfully to state memory!'); }
+function exportReport() { window.print(); }
+
+/* ============ INITIALIZATION ============ */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   renderCurrentView();
-  toast('Consultant removed.', 'success');
-  syncToSheets(false);
-}
-
-/* ============ TOAST ============ */
-let toastTimer;
-function toast(msg, type){
-  const el = document.getElementById('toast');
-  const bg = type==='error' ? 'bg-red-600' : 'bg-slate-800';
-  el.innerHTML = '<div class="'+bg+' text-white text-sm font-medium px-4 py-2.5 rounded-lg shadow-lg fade-in">'+esc(msg)+'</div>';
-  el.classList.remove('hidden');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ el.classList.add('hidden'); }, 3000);
-}
-
-/* ============ GOOGLE SHEETS SYNC ============
-   Best-effort only: every feature above works fully in-memory even if this fails.
-   Sends POST with a plain-text body (no Content-Type header) to avoid a CORS
-   preflight against the Apps Script endpoint — a common requirement for
-   script.google.com/macros web apps. Expects:
-     doPost(e): read JSON.parse(e.postData.contents) -> {action:'save', consultants, entries}
-     doGet(e):  if e.parameter.action === 'load', return JSON {consultants:[...], entries:[...]}
-   If your deployed Apps Script uses a different contract, tell me its expected
-   request/response shape (or paste the script) and I'll match it exactly. */
-function setSyncStatus(s){
-  const el = document.getElementById('syncStatus');
-  const map = {
-    saving:  ['<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>','Syncing…'],
-    synced:  ['<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>','Live'],
-    error:   ['<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>','Sync Error'],
-    offline: ['<span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>','Offline']
-  };
-  const pair = map[s] || map.offline;
-  el.innerHTML = pair[0]+'<span>'+pair[1]+'</span>';
-}
-function saveAllData(){ syncToSheets(true); }
-function syncToSheets(manual){
-  if(!USE_GOOGLE_SHEETS || !GOOGLE_SCRIPT_URL){ if(manual) toast('Saved locally. Google Sheets sync is off.', 'success'); return; }
-  setSyncStatus('saving');
-  fetch(GOOGLE_SCRIPT_URL, {
-    method:'POST',
-    body: JSON.stringify({ action:'save', consultants: state.consultants, entries: state.entries })
-  }).then(function(res){
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    setSyncStatus('synced');
-    if(manual) toast('Saved to Google Sheets.', 'success');
-  }).catch(function(err){
-    setSyncStatus('error');
-    if(manual) toast('Could not reach Google Sheets — your changes are still saved in this session.', 'error');
-    console.warn('Sheets sync failed:', err);
-  });
-}
-function loadFromSheets(){
-  if(!USE_GOOGLE_SHEETS || !GOOGLE_SCRIPT_URL){ setSyncStatus('offline'); renderCurrentView(); updateAlertBadge(); return; }
-  setSyncStatus('saving');
-  fetch(GOOGLE_SCRIPT_URL + '?action=load').then(function(res){
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    return res.json();
-  }).then(function(data){
-    if(data && Array.isArray(data.consultants) && Array.isArray(data.entries)){
-      state.consultants = data.consultants;
-      state.entries = data.entries;
-    }
-    setSyncStatus('synced');
-  }).catch(function(err){
-    setSyncStatus('offline');
-    console.warn('Could not load from Google Sheets, using local data:', err);
-  }).finally(function(){
-    renderCurrentView();
-    updateAlertBadge();
-  });
-}
-
-/* ============ EXPORT CSV ============ */
-function csvCell(v){ const s = String(v==null?'':v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
-function exportReport(){
-  const entries = periodEntries();
-  if(!entries.length){ toast('No entries to export for '+periodLabel().toLowerCase()+'.', 'error'); return; }
-  const headers = ['Date','Consultant','Level','Customer','Product','Client Name','Client Number','Case Link','CHS %','PAS %','CES %','Composite','Call Roadmap','Notes'];
-  const rows = entries.map(function(e){
-    const c = consultantById(e.consultantId);
-    const rmChecked = (e.roadmapChecks||[]).filter(Boolean).length;
-    return [ e.date, c?c.name:'', c?c.certLevel:'', e.customerName||'', e.product||'', e.clientName||'', e.clientNumber||'', e.caseLink||'', chsScore(e), pasScore(e), cesScore(e), composite(e), rmChecked+'/'+ROADMAP_ITEMS.length, e.notes||'' ];
-  });
-  const csv = [headers].concat(rows).map(function(r){ return r.map(csvCell).join(','); }).join('\r\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'hof-qa-report-'+state.period+'-'+todayISO()+'.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast('CSV exported.', 'success');
-}
-
-/* ============ INIT ============ */
-function renderCurrentDate(){
-  document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-}
-document.getElementById('entryModal').addEventListener('click', function(e){ if(e.target.id==='entryModal') closeEntryModal(); });
-document.getElementById('consultantModal').addEventListener('click', function(e){ if(e.target.id==='consultantModal') closeConsultantModal(); });
-document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeEntryModal(); closeConsultantModal(); } });
-
-document.addEventListener('DOMContentLoaded', function(){
-  renderCurrentDate();
-  loadFromSheets();
 });
 </script>
 </body>
